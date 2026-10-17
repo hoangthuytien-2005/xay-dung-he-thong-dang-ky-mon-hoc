@@ -1,0 +1,119 @@
+# ==========================================
+# Root .gitignore for UniCredit Portal (Fullstack BTL)
+# Covers: Frontend (Next.js / Node) + Backend (C# / .NET) + IDEs & OS
+# ==========================================
+
+# -----------------
+# Operating System Files
+# -----------------
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+Desktop.ini
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# -----------------
+# IDEs and Editors
+# -----------------
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+
+# -----------------
+# Node & Frontend (Next.js)
+# -----------------
+**/node_modules/
+**/.pnp
+**/.pnp.js
+**/.yarn/cache
+**/.yarn/unplugged
+**/.yarn/build-state.yml
+**/.yarn/install-state.gz
+**/.pnp.*
+
+# Next.js build output
+**/.next/
+**/out/
+**/dist/
+**/build/
+
+# Environment files
+.env
+.env*.local
+!.env.example
+
+# Debug and Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+**/*.log
+
+# Next.js telemetry and cache
+.next/cache/
+*.tsbuildinfo
+next-env.d.ts.bak
+
+# -----------------
+# .NET / C# Backend
+# -----------------
+**/bin/
+**/obj/
+**/appsettings.Development.json
+**/appsettings.Production.json
+
+# Visual Studio build artifacts
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userprefs
+
+# Test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# NuGet Packages
+*.nupkg
+**/packages/
+!**/packages/build/
+
+# Microsoft Azure / Publish Profiles
+*.PublishSettings
+*.pubxml
+*.azurePubxml
+
+# Temporary and Scratch Files
+*.tmp
+*.bak
+*.swp
+*~
