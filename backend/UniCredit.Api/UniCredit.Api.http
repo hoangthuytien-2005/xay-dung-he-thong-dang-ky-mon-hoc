@@ -1,0 +1,6 @@
+@UniCredit.Api_HostAddress = http://localhost:5047
+
+GET {{UniCredit.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
