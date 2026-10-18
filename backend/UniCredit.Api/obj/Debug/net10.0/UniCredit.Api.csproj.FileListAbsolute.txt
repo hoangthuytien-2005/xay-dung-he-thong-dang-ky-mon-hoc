@@ -31,3 +31,13 @@ G:\BTL\Hệ thống đăng kí tín chỉ\backend\UniCredit.Api\obj\Debug\net10.
 G:\BTL\Hệ thống đăng kí tín chỉ\backend\UniCredit.Api\obj\Debug\net10.0\UniCredit.Api.pdb
 G:\BTL\Hệ thống đăng kí tín chỉ\backend\UniCredit.Api\obj\Debug\net10.0\UniCredit.Api.genruntimeconfig.cache
 G:\BTL\Hệ thống đăng kí tín chỉ\backend\UniCredit.Api\obj\Debug\net10.0\ref\UniCredit.Api.dll
+G:\BTL\Hệ thống đăng kí tín chỉ\backend\UniCredit.Api\obj\Debug\net10.0\UniCredit.Api.sourcelink.json
+G:\BTL\Hệ thống đăng kí tín chỉ\backend\UniCredit.Api\bin\Debug\net10.0\DnsClient.dll
+G:\BTL\Hệ thống đăng kí tín chỉ\backend\UniCredit.Api\bin\Debug\net10.0\MongoDB.Bson.dll
+G:\BTL\Hệ thống đăng kí tín chỉ\backend\UniCredit.Api\bin\Debug\net10.0\MongoDB.Driver.dll
+G:\BTL\Hệ thống đăng kí tín chỉ\backend\UniCredit.Api\bin\Debug\net10.0\SharpCompress.dll
+G:\BTL\Hệ thống đăng kí tín chỉ\backend\UniCredit.Api\bin\Debug\net10.0\Snappier.dll
+G:\BTL\Hệ thống đăng kí tín chỉ\backend\UniCredit.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.Swagger.dll
+G:\BTL\Hệ thống đăng kí tín chỉ\backend\UniCredit.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+G:\BTL\Hệ thống đăng kí tín chỉ\backend\UniCredit.Api\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerUI.dll
+G:\BTL\Hệ thống đăng kí tín chỉ\backend\UniCredit.Api\bin\Debug\net10.0\ZstdSharp.dll
