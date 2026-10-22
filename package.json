@@ -1,0 +1,13 @@
+{
+  "name": "unicredit-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "UniCredit Course Registration System (Root Workspace)",
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "test": "npm test --prefix frontend",
+    "start": "npm start --prefix frontend",
+    "backend": "dotnet run --project backend/UniCredit.Api"
+  }
+}

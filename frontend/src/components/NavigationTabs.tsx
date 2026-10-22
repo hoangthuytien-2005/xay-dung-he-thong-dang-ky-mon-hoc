@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import { BookOpen, Calendar, Award, GitBranch, Settings } from "lucide-react";
+import { BookOpen, Calendar, Award, GitBranch } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type ActiveTabType = "registration" | "timetable" | "curriculum" | "transcript" | "admin";
+export type ActiveTabType = "registration" | "timetable" | "curriculum" | "transcript";
 
 interface NavigationTabsProps {
   activeTab: ActiveTabType;
@@ -42,11 +42,6 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
       label: "Kết quả học tập",
       icon: Award,
     },
-    {
-      id: "admin" as ActiveTabType,
-      label: "Quản trị đào tạo",
-      icon: Settings,
-    },
   ];
 
   return (
@@ -67,14 +62,14 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 )}
               >
-                <Icon className={cn("w-4 h-4", isActive ? "text-blue-400" : "text-slate-500")} />
+                <Icon className={cn("w-4 h-4", isActive ? "text-red-400" : "text-slate-500")} />
                 <span>{tab.label}</span>
                 {tab.badge && (
                   <span
                     className={cn(
                       "text-[11px] px-1.5 py-0.5 rounded font-semibold",
                       isActive
-                        ? "bg-blue-600 text-white"
+                        ? "bg-red-800 text-white"
                         : "bg-slate-200 text-slate-700"
                     )}
                   >

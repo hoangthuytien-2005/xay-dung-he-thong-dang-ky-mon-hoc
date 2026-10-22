@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { GraduationCap, User, Lock, KeyRound, ArrowRight, ShieldCheck, UserCheck } from "lucide-react";
 import { UserRole } from "@/components/Navbar";
 import { StudentData, LecturerData, INITIAL_STUDENT, INITIAL_LECTURERS } from "@/lib/mock-data";
+import { api } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
 interface LoginPageProps {
@@ -32,7 +33,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  const handleLogin = (e?: React.FormEvent) => {
+  const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setErrorMsg("");
 
@@ -46,44 +47,37 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       return;
     }
 
-    if (role === "student") {
-      if (username.toUpperCase() === INITIAL_STUDENT.studentCode) {
+    try {
+      const res = await api.login(username, password, role);
+      if (res.success && res.data) {
         onLoginSuccess({
-          role: "student",
-          student: INITIAL_STUDENT,
+          role: res.data.role,
+          student: res.data.student,
+          lecturer: res.data.lecturer,
         });
-      } else {
-        // Fallback create student with entered code
-        onLoginSuccess({
-          role: "student",
-          student: {
-            ...INITIAL_STUDENT,
-            studentCode: username.toUpperCase(),
-            fullName: "Sinh viên " + username.toUpperCase(),
-          },
-        });
+        return;
+      } else if (res.message) {
+        setErrorMsg(res.message);
+        return;
       }
+    } catch {
+      // Fallback below
+    }
+
+    // Fallback if backend is not reachable
+    if (role === "student") {
+      onLoginSuccess({
+        role: "student",
+        student: INITIAL_STUDENT,
+      });
     } else {
-      // Lecturer
       const found = INITIAL_LECTURERS.find(
         (l) => l.lecturerCode.toLowerCase() === username.toLowerCase()
-      );
-      if (found) {
-        onLoginSuccess({
-          role: "lecturer",
-          lecturer: found,
-        });
-      } else {
-        // Default lecturer fallback
-        onLoginSuccess({
-          role: "lecturer",
-          lecturer: {
-            ...INITIAL_LECTURERS[0],
-            lecturerCode: username.toUpperCase(),
-            fullName: "Giảng viên " + username.toUpperCase(),
-          },
-        });
-      }
+      ) || INITIAL_LECTURERS[0];
+      onLoginSuccess({
+        role: "lecturer",
+        lecturer: found,
+      });
     }
   };
 

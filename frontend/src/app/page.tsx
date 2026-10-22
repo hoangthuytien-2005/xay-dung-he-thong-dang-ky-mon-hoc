@@ -13,8 +13,9 @@ import { MiniSchedulePreview } from "@/components/Registration/MiniSchedulePrevi
 import { FullTimetableGrid } from "@/components/Timetable/FullTimetableGrid";
 import { CurriculumView } from "@/components/Curriculum/CurriculumView";
 import { TranscriptView } from "@/components/Transcript/TranscriptView";
-import { AdminPanel } from "@/components/Admin/AdminPanel";
 import { ConflictModal, ModalErrorData } from "@/components/ConflictModal";
+import { UserProfileModal } from "@/components/Modals/UserProfileModal";
+import { ChangePasswordModal } from "@/components/Modals/ChangePasswordModal";
 import {
   StudentData,
   LecturerData,
@@ -23,6 +24,7 @@ import {
   RegistrationPeriodData,
   INITIAL_STUDENT,
 } from "@/lib/mock-data";
+import { api } from "@/lib/api-client";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 
@@ -41,9 +43,12 @@ export default function HomePage() {
   const [period, setPeriod] = useState<RegistrationPeriodData | null>(null);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isSeeding, setIsSeeding] = useState<boolean>(false);
   const [isRegistering, setIsRegistering] = useState<string | null>(null);
   const [isDropping, setIsDropping] = useState<string | null>(null);
+
+  // Modal dialog states
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState<boolean>(false);
 
   // Registration Filter & Hover State
   const [category, setCategory] = useState<CourseCategoryType>("proposal");
@@ -56,16 +61,16 @@ export default function HomePage() {
     setIsLoading(true);
     try {
       const [resStudent, resCourses, resClasses, resPeriod] = await Promise.all([
-        fetch("/api/student").then((r) => r.json()),
-        fetch("/api/courses").then((r) => r.json()),
-        fetch("/api/classes").then((r) => r.json()),
-        fetch("/api/periods").then((r) => r.json()),
+        api.getStudent(),
+        api.getCourses(),
+        api.getClasses(),
+        api.getPeriod(),
       ]);
 
-      if (resStudent.success) setStudent(resStudent.data);
-      if (resCourses.success) setCourses(resCourses.data);
-      if (resClasses.success) setClasses(resClasses.data);
-      if (resPeriod.success) setPeriod(resPeriod.data);
+      if (resStudent.success && resStudent.data) setStudent(resStudent.data);
+      if (resCourses.success && resCourses.data) setCourses(resCourses.data);
+      if (resClasses.success && resClasses.data) setClasses(resClasses.data);
+      if (resPeriod.success && resPeriod.data) setPeriod(resPeriod.data);
     } catch (err) {
       console.error("Error loading data:", err);
     } finally {
@@ -119,22 +124,13 @@ export default function HomePage() {
   const handleRegisterClass = async (classCode: string) => {
     setIsRegistering(classCode);
     try {
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          studentCode: student?.studentCode || "B21DCCN001",
-          classCode,
-        }),
-      });
+      const data = await api.registerClass(student?.studentCode || "B21DCCN001", classCode);
 
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
+      if (!data.success) {
         setErrorModal({
           title: "Không thể đăng ký lớp học này",
           message: data.message || "Đã xảy ra lỗi trong quá trình kiểm tra ràng buộc.",
-          errorType: data.errorType || "GENERAL",
+          errorType: (data.errorType as ModalErrorData["errorType"]) || "GENERAL",
         });
       } else {
         // Trigger celebration confetti
@@ -167,17 +163,8 @@ export default function HomePage() {
   const handleDropClass = async (classCode: string) => {
     setIsDropping(classCode);
     try {
-      const res = await fetch("/api/register", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          studentCode: student?.studentCode || "B21DCCN001",
-          classCode,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
+      const data = await api.dropClass(student?.studentCode || "B21DCCN001", classCode);
+      if (!data.success) {
         alert(data.message || "Không thể hủy lớp học phần.");
       } else {
         await loadData();
@@ -196,29 +183,10 @@ export default function HomePage() {
     isActive: boolean
   ) => {
     try {
-      await fetch("/api/periods", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ minCredits, maxCredits, isActive }),
-      });
+      await api.updatePeriodConfig(minCredits, maxCredits, isActive);
       await loadData();
     } catch (err) {
       console.error(err);
-    }
-  };
-
-  // Action: Seed Data
-  const handleSeedData = async () => {
-    setIsSeeding(true);
-    try {
-      const res = await fetch("/api/seed", { method: "POST" });
-      const data = await res.json();
-      alert(data.message);
-      await loadData();
-    } catch {
-      alert("Lỗi khi thực hiện seed dữ liệu mẫu.");
-    } finally {
-      setIsSeeding(false);
     }
   };
 
@@ -240,13 +208,13 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans">
-      {/* 1. Academic Red Navbar */}
+      {/* 1. Academic Red Navbar with Profile Dropdown */}
       <Navbar
         currentUser={currentUser}
         period={period}
-        onSeedData={handleSeedData}
-        isSeeding={isSeeding}
         onLogout={() => setCurrentUser(null)}
+        onOpenProfile={() => setIsProfileOpen(true)}
+        onOpenChangePassword={() => setIsChangePasswordOpen(true)}
       />
 
       {/* 2. Navigation Tabs (Visible for Students) */}
@@ -277,6 +245,8 @@ export default function HomePage() {
             <LecturerPortal
               lecturer={currentUser.lecturer}
               classes={classes}
+              period={period}
+              onUpdatePeriod={handleUpdatePeriod}
             />
           </motion.div>
         ) : (
@@ -412,25 +382,6 @@ export default function HomePage() {
                 <TranscriptView student={student} />
               </motion.div>
             )}
-
-            {/* TAB 5: QUẢN TRỊ ĐÀO TẠO */}
-            {activeTab === "admin" && (
-              <motion.div
-                key="tab-admin"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-              >
-                <AdminPanel
-                  period={period}
-                  classes={classes}
-                  onUpdatePeriod={handleUpdatePeriod}
-                  onSeedData={handleSeedData}
-                  isSeeding={isSeeding}
-                />
-              </motion.div>
-            )}
           </AnimatePresence>
         )}
       </main>
@@ -441,7 +392,20 @@ export default function HomePage() {
         onClose={() => setErrorModal(null)}
       />
 
-      {/* 5. Minimal Academic Footer */}
+      {/* 5. User Profile Modal */}
+      <UserProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        currentUser={currentUser}
+      />
+
+      {/* 6. Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
+
+      {/* 7. Minimal Academic Footer */}
       <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4">
           UniCredit Portal © 2024 - 2026 • Cổng Thông Tin Học Vụ & Đăng Ký Tín Chỉ Trực Tuyến

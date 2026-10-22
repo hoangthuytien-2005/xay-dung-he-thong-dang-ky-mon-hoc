@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="UniCredit.Api/UniCredit.Api.csproj" />
+  <Project Path="UniCredit.Tests/UniCredit.Tests.csproj" />
 </Solution>

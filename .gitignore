@@ -117,3 +117,6 @@ bld/
 *.bak
 *.swp
 *~
+
+# Windows Batch Scripts
+*.bat
