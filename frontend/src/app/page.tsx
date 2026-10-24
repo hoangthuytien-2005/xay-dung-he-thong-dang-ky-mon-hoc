@@ -29,7 +29,6 @@ import {
 } from "@/lib/mock-data";
 import { api } from "@/lib/api-client";
 import { motion, AnimatePresence } from "framer-motion";
-import confetti from "canvas-confetti";
 
 export default function HomePage() {
   // Authentication session state
@@ -65,7 +64,7 @@ export default function HomePage() {
   const [errorModal, setErrorModal] = useState<ModalErrorData | null>(null);
 
   // Fetch data (with optional showSpinner so background refreshes don't flash)
-  const loadData = async (showSpinner: boolean = true) => {
+  const loadData = async (showSpinner: boolean = false) => {
     if (showSpinner) setIsLoading(true);
     try {
       const [resStudent, resAllStudents, resCourses, resClasses, resPeriod] = await Promise.all([
@@ -91,13 +90,34 @@ export default function HomePage() {
     } catch (err) {
       console.error("Error loading data:", err);
     } finally {
-      if (showSpinner) setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let isMounted = true;
+    Promise.all([
+      api.getStudent("B21DCCN001"),
+      api.getAllStudents(),
+      api.getCourses(),
+      api.getClasses(),
+      api.getPeriod(),
+    ])
+      .then(([resStudent, resAllStudents, resCourses, resClasses, resPeriod]) => {
+        if (!isMounted) return;
+        if (resStudent.success && resStudent.data) setStudent(resStudent.data);
+        if (resAllStudents.success && resAllStudents.data) setAllStudents(resAllStudents.data);
+        if (resCourses.success && resCourses.data) setCourses(resCourses.data);
+        if (resClasses.success && resClasses.data) setClasses(resClasses.data);
+        if (resPeriod.success && resPeriod.data) setPeriod(resPeriod.data);
+      })
+      .catch((err) => console.error("Error loading data:", err))
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Filtered registered classes for current student
@@ -156,18 +176,6 @@ export default function HomePage() {
           errorType: (data.errorType as ModalErrorData["errorType"]) || "GENERAL",
         });
       } else {
-        // Trigger celebration confetti
-        try {
-          confetti({
-            particleCount: 35,
-            spread: 50,
-            origin: { y: 0.8 },
-            colors: ["#b91c1c", "#059669", "#0f172a"],
-          });
-        } catch {
-          // Ignore
-        }
-
         // Immediately update local student & class state
         const returnedStudent = data.data || data.updatedStudent;
         if (returnedStudent) {
@@ -406,8 +414,8 @@ export default function HomePage() {
   const isAdmin = currentUser.role === "admin";
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans">
-      {/* 1. Academic Red Navbar with Profile Dropdown */}
+    <div className="min-h-screen bg-[#FFFFFF] text-[#1F2937] flex flex-col">
+      {/* 1. Burgundy Navbar with User Profile Dropdown */}
       <Navbar
         currentUser={{
           ...currentUser,
@@ -419,8 +427,8 @@ export default function HomePage() {
         onOpenChangePassword={() => setIsChangePasswordOpen(true)}
       />
 
-      {/* 2. Body Layout: Left Function Column (White BG, Red Text, Dark Red Cell Borders) + Right Main Workspace */}
-      <div className="flex flex-1 min-h-0 w-full max-w-[1600px] mx-auto">
+      {/* 2. Body Layout: Left Function Column + Right Main Workspace */}
+      <div className="flex flex-1 min-h-0 w-full max-w-[1600px] mx-auto bg-[#FFFFFF]">
         <NavigationTabs
           activeTab={activeTab}
           onChangeTab={setActiveTab}
@@ -432,19 +440,19 @@ export default function HomePage() {
         />
 
         {/* 3. Main Content Container */}
-        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-6">
+        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-6 bg-[#FFFFFF]">
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-500 space-y-2">
-              <div className="w-8 h-8 border-3 border-red-800 border-t-transparent rounded-full animate-spin"></div>
+            <div className="flex flex-col items-center justify-center py-20 text-[#6B7280] space-y-2.5">
+              <div className="w-7 h-7 border-2 border-[#7F1D2D] border-t-transparent rounded-full animate-spin"></div>
               <p className="text-xs font-medium">Đang tải dữ liệu học vụ...</p>
             </div>
           ) : isLecturer && currentUser.lecturer ? (
             /* LECTURER PORTAL VIEW */
             <motion.div
               key="lecturer-portal"
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.18, ease: "easeOut" }}
+              transition={{ duration: 0.16, ease: "easeOut" }}
             >
               <LecturerPortal
                 lecturer={currentUser.lecturer}
@@ -468,9 +476,9 @@ export default function HomePage() {
             /* TRAINING ADMINISTRATION PORTAL VIEW */
             <motion.div
               key="admin-portal"
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.18, ease: "easeOut" }}
+              transition={{ duration: 0.16, ease: "easeOut" }}
             >
               <AdminPanel
                 admin={currentUser.admin}
@@ -496,15 +504,16 @@ export default function HomePage() {
               {activeTab === "registration" && (
                 <motion.div
                   key="tab-registration"
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.16, ease: "easeOut" }}
                 >
                   {/* Period banner & credit progress */}
                   <PeriodBanner
                     period={period}
                     currentCredits={currentTotalCredits}
+                    registeredCount={registeredClasses.length}
                   />
 
                   {/* 2-Column Responsive Layout */}
@@ -512,11 +521,15 @@ export default function HomePage() {
                     {/* Left Column (Courses to register) */}
                     <div className="xl:col-span-7 space-y-4">
                       <div className="flex items-center justify-between">
-                        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800">
+                        <h2 className="text-sm font-bold text-[#1F2937]">
                           Danh sách học phần mở đăng ký
                         </h2>
-                        <span className="text-xs text-slate-500">
-                          Hiển thị: <strong>{filteredCourses.length}</strong> / {courses.length} môn học
+                        <span className="text-xs text-[#6B7280]">
+                          Hiển thị:{" "}
+                          <strong className="text-[#1F2937]">
+                            {filteredCourses.length}
+                          </strong>{" "}
+                          / {courses.length} học phần
                         </span>
                       </div>
 
@@ -535,8 +548,10 @@ export default function HomePage() {
 
                       {/* Courses list */}
                       {filteredCourses.length === 0 ? (
-                        <div className="bg-white border border-slate-200 rounded-md p-8 text-center text-slate-400">
-                          <p className="text-xs font-medium">Không tìm thấy môn học nào phù hợp với bộ lọc.</p>
+                        <div className="bg-[#F8F9FB] border border-[#E5E7EB] rounded-lg p-8 text-center text-[#6B7280]">
+                          <p className="text-xs font-medium text-[#4B5563]">
+                            Không tìm thấy học phần nào phù hợp với bộ lọc hiện tại.
+                          </p>
                         </div>
                       ) : (
                         filteredCourses.map((c) => {
@@ -586,15 +601,16 @@ export default function HomePage() {
               {activeTab === "drop_courses" && (
                 <motion.div
                   key="tab-drop-courses"
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.16, ease: "easeOut" }}
                   className="space-y-6"
                 >
                   <PeriodBanner
                     period={period}
                     currentCredits={currentTotalCredits}
+                    registeredCount={registeredClasses.length}
                   />
 
                   <RegisteredTable
@@ -614,10 +630,10 @@ export default function HomePage() {
               {activeTab === "timetable" && (
                 <motion.div
                   key="tab-timetable"
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.16, ease: "easeOut" }}
                 >
                   <FullTimetableGrid registeredClasses={registeredClasses} />
                 </motion.div>
@@ -627,10 +643,10 @@ export default function HomePage() {
               {activeTab === "curriculum" && (
                 <motion.div
                   key="tab-curriculum"
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.16, ease: "easeOut" }}
                 >
                   <CurriculumView
                     courses={courses}
@@ -644,10 +660,10 @@ export default function HomePage() {
               {activeTab === "transcript" && (
                 <motion.div
                   key="tab-transcript"
-                  initial={{ opacity: 0, y: 8 }}
+                  initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.16, ease: "easeOut" }}
                 >
                   <TranscriptView student={student} />
                 </motion.div>
@@ -679,10 +695,10 @@ export default function HomePage() {
         onClose={() => setIsChangePasswordOpen(false)}
       />
 
-      {/* 7. Minimal Academic Footer */}
-      <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+      {/* 7. Academic Footer */}
+      <footer className="bg-[#F8F9FB] border-t border-[#E5E7EB] py-4 text-center text-xs text-[#6B7280]">
         <div className="max-w-7xl mx-auto px-4">
-          UniCredit Portal © 2024 - 2026 • Cổng Thông Tin Học Vụ & Đăng Ký Tín Chỉ Trực Tuyến (Chương trình Đào tạo CNTT)
+          UniCredit Portal © 2024 - 2026 • Hệ thống Đăng ký Tín chỉ & Quản lý Học vụ Đại học
         </div>
       </footer>
     </div>

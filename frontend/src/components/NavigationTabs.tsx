@@ -1,19 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  BookOpen,
-  Calendar,
-  Award,
-  GitBranch,
-  Trash2,
-  Menu,
-  ChevronRight,
-  Settings,
-  Users,
-  ClipboardCheck,
-  UserCog,
-} from "lucide-react";
+import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserRole } from "./Navbar";
 
@@ -41,8 +29,8 @@ interface NavigationTabsProps {
 interface SidebarTabItem {
   id: ActiveTabType;
   label: string;
+  shortLabel: string;
   subLabel?: string;
-  icon: React.ComponentType<{ className?: string }>;
   badge?: string;
 }
 
@@ -59,36 +47,39 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
     {
       id: "registration",
       label: "Đăng ký tín chỉ",
+      shortLabel: "ĐK",
       subLabel: "Chọn lớp học phần mở",
-      icon: BookOpen,
-      badge: registeredCount > 0 ? `${registeredCount} môn (${totalCredits} TC)` : undefined,
+      badge:
+        registeredCount > 0
+          ? `${registeredCount} môn (${totalCredits} TC)`
+          : undefined,
     },
     {
       id: "drop_courses",
       label: "Hủy môn học đã đăng ký",
+      shortLabel: "Hủy",
       subLabel: "Quản lý & rút học phần",
-      icon: Trash2,
       badge: registeredCount > 0 ? `${registeredCount} lớp` : "0 lớp",
     },
     {
       id: "timetable",
       label: "Thời khóa biểu tuần",
+      shortLabel: "TKB",
       subLabel: "Lịch học chính thức",
-      icon: Calendar,
       badge: registeredCount > 0 ? `${registeredCount} lớp` : undefined,
     },
     {
       id: "curriculum",
       label: "Chương trình đào tạo",
-      subLabel: "Khung 9 học kỳ",
-      icon: GitBranch,
+      shortLabel: "CTĐT",
+      subLabel: "Khung 9 học kỳ chuẩn",
       badge: "9 kỳ",
     },
     {
       id: "transcript",
       label: "Kết quả học tập",
-      subLabel: "Bảng điểm & CPA tích lũy",
-      icon: Award,
+      shortLabel: "Điểm",
+      subLabel: "Bảng điểm theo từng kỳ",
     },
   ];
 
@@ -96,14 +87,14 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
     {
       id: "lecturer_attendance",
       label: "Điểm danh sinh viên",
+      shortLabel: "ĐD",
       subLabel: "Cá nhân & Toàn bộ lớp",
-      icon: ClipboardCheck,
     },
     {
       id: "lecturer_schedule",
       label: "Quản lý lịch dạy",
+      shortLabel: "Lịch",
       subLabel: "Lịch giảng dạy từng lớp",
-      icon: Calendar,
     },
   ];
 
@@ -111,14 +102,14 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
     {
       id: "admin_period",
       label: "Mở / Đóng cổng ĐKTC",
+      shortLabel: "Cổng",
       subLabel: "Cấu hình đợt & Sĩ số",
-      icon: Settings,
     },
     {
       id: "admin_students",
       label: "Quản lý hồ sơ sinh viên",
+      shortLabel: "Hồ sơ",
       subLabel: "Đánh dấu Bảo lưu / Thôi học",
-      icon: UserCog,
     },
   ];
 
@@ -139,108 +130,107 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
   return (
     <aside
       className={cn(
-        "bg-white text-red-700 border-r-2 border-red-900 shrink-0 flex flex-col transition-all duration-200 select-none shadow-sm",
-        isCollapsed ? "w-16" : "w-72"
+        "bg-[#FFFFFF] text-[#7F1D2D] border-r border-[#7F1D2D] shrink-0 flex flex-col transition-[width] duration-200 ease-out select-none",
+        isCollapsed ? "w-14 sm:w-16" : "w-64 lg:w-72"
       )}
-      aria-label="Cột chức năng hệ thống"
+      aria-label="Danh mục chức năng"
     >
-      {/* Header Cell with 3-bar Hamburger Icon */}
+      {/* Header Cell with single 3-bar Hamburger Icon */}
       <div
         className={cn(
-          "bg-white text-red-700 border-b-2 border-red-900 flex items-center",
-          isCollapsed ? "justify-center p-3" : "justify-between px-4 py-3.5"
+          "bg-[#FFFFFF] text-[#7F1D2D] border-b border-[#7F1D2D] flex items-center",
+          isCollapsed
+            ? "justify-center p-2.5 sm:p-3"
+            : "justify-between px-4 py-3.5"
         )}
       >
         {!isCollapsed && (
-          <div>
-            <h2 className="text-xs font-extrabold uppercase tracking-wider text-red-700">
+          <div className="min-w-0">
+            <h2 className="text-xs font-bold tracking-wide text-[#7F1D2D] truncate">
               Danh mục chức năng
             </h2>
-            <p className="text-[11px] text-red-600/80 font-medium">
+            <p className="text-[11px] text-[#7F1D2D]/80 mt-0.5 truncate">
               {roleSubtitle}
             </p>
           </div>
         )}
 
         <button
+          type="button"
           onClick={onToggleCollapse}
-          title={isCollapsed ? "Hiển thị cột chức năng" : "Thu gọn cột chức năng"}
-          aria-label="Thu gọn / Hiển thị cột chức năng"
-          className="w-9 h-9 inline-flex items-center justify-center bg-white hover:bg-red-50 text-red-700 border border-red-900 rounded transition cursor-pointer shadow-2xs"
+          title={
+            isCollapsed ? "Hiển thị cột chức năng" : "Thu gọn cột chức năng"
+          }
+          aria-label="Thu gọn hoặc hiển thị cột chức năng"
+          aria-expanded={!isCollapsed}
+          className="w-9 h-9 inline-flex items-center justify-center bg-[#FFFFFF] hover:bg-[#FFF5F5] text-[#7F1D2D] border border-[#7F1D2D] rounded-md transition-colors duration-150 cursor-pointer shrink-0"
         >
-          <Menu className="w-5 h-5 text-red-700" />
+          <Menu className="w-4 h-4 text-[#7F1D2D]" />
         </button>
       </div>
 
-      {/* Main Function Cells divided by dark red borders */}
-      <nav className="flex flex-col divide-y-2 divide-red-900 border-b-2 border-red-900">
+      {/* Function Cells separated by dark burgundy borders (No leading icons) */}
+      <nav className="flex flex-col divide-y divide-[#7F1D2D] border-b border-[#7F1D2D]">
         {tabs.map((tab) => {
-          const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
+              type="button"
               onClick={() => onChangeTab(tab.id)}
               title={isCollapsed ? tab.label : undefined}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
-                "w-full text-left bg-white hover:bg-red-50/80 text-red-700 transition-all duration-150 cursor-pointer flex items-center relative group",
-                isCollapsed ? "justify-center py-4 px-2" : "justify-between px-4 py-3.5",
-                isActive && "bg-red-50/90 font-bold shadow-[inset_4px_0_0_0_#7f1d1d]"
+                "w-full text-left bg-[#FFFFFF] hover:bg-[#FFF5F5]/80 text-[#7F1D2D] transition-colors duration-150 cursor-pointer flex items-center relative",
+                isCollapsed
+                  ? "justify-center py-3.5 px-1.5"
+                  : "justify-between px-4 py-3.5",
+                isActive &&
+                  "bg-[#FFF5F5] font-semibold shadow-[inset_3px_0_0_0_#7F1D2D]"
               )}
             >
-              <div className={cn("flex items-center", !isCollapsed && "space-x-3")}>
-                <div
+              {isCollapsed ? (
+                <span
                   className={cn(
-                    "w-8 h-8 rounded flex items-center justify-center border border-red-900 bg-white text-red-700 shrink-0 transition",
-                    isActive && "bg-red-700 text-white border-red-950"
+                    "text-[11px] font-semibold text-[#7F1D2D] text-center leading-tight",
+                    isActive && "font-bold text-[#651525]"
                   )}
                 >
-                  <Icon className="w-4 h-4" />
-                </div>
-
-                {!isCollapsed && (
-                  <div>
+                  {tab.shortLabel}
+                </span>
+              ) : (
+                <>
+                  <div className="min-w-0">
                     <div
                       className={cn(
-                        "text-xs text-red-700 leading-snug",
-                        isActive ? "font-extrabold text-red-800" : "font-semibold"
+                        "text-xs text-[#7F1D2D] leading-snug truncate",
+                        isActive ? "font-bold text-[#651525]" : "font-medium"
                       )}
                     >
                       {tab.label}
                     </div>
                     {tab.subLabel && (
-                      <div className="text-[11px] text-red-600/80 font-normal mt-0.5">
+                      <div className="text-[11px] text-[#7F1D2D]/75 font-normal mt-0.5 truncate">
                         {tab.subLabel}
                       </div>
                     )}
                   </div>
-                )}
-              </div>
 
-              {!isCollapsed && (
-                <div className="flex items-center space-x-1.5">
                   {tab.badge && (
                     <span
                       className={cn(
-                        "text-[10px] px-1.5 py-0.5 rounded border border-red-900 font-bold bg-white text-red-700",
-                        isActive && "bg-red-100 text-red-800"
+                        "text-[10px] px-1.5 py-0.5 rounded border border-[#7F1D2D]/40 font-semibold bg-[#FFFFFF] text-[#7F1D2D] shrink-0 ml-2",
+                        isActive && "bg-[#7F1D2D] text-white border-[#7F1D2D]"
                       )}
                     >
                       {tab.badge}
                     </span>
                   )}
-                  <ChevronRight
-                    className={cn(
-                      "w-3.5 h-3.5 text-red-700 transition-transform",
-                      isActive ? "translate-x-0.5 opacity-100" : "opacity-50 group-hover:opacity-100"
-                    )}
-                  />
-                </div>
+                </>
               )}
 
-              {/* Badge dot when collapsed */}
               {isCollapsed && tab.badge && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-700 border border-red-900" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#7F1D2D]" />
               )}
             </button>
           );

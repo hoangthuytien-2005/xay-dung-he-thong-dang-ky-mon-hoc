@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Search, Layers, RefreshCw, Sparkles, BookOpen, CalendarRange } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type CourseCategoryType = "proposal" | "retake" | "improve" | "all";
@@ -33,45 +33,49 @@ export const CourseFilter: React.FC<CourseFilterProps> = ({
     {
       id: "proposal" as CourseCategoryType,
       label: "Theo kế hoạch (Kỳ 5)",
-      icon: BookOpen,
-      desc: "Môn theo chuẩn tiến độ CTĐT",
     },
     {
       id: "retake" as CourseCategoryType,
       label: "Học lại",
-      icon: RefreshCw,
       badge: retakeCount > 0 ? `${retakeCount} môn F` : undefined,
-      desc: "Môn chưa đạt cần học lại",
     },
     {
       id: "improve" as CourseCategoryType,
       label: "Học cải thiện",
-      icon: Sparkles,
       badge: improveCount > 0 ? `${improveCount} môn` : undefined,
-      desc: "Môn điểm D/D+ muốn nâng điểm",
     },
     {
       id: "all" as CourseCategoryType,
       label: "Tất cả môn CTĐT",
-      icon: Layers,
       badge: `${totalCoursesCount} môn`,
-      desc: `Toàn bộ ${totalCoursesCount} môn học 9 kỳ`,
     },
   ];
 
   const semesters = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const hasActiveFilter =
+    searchTerm.trim() !== "" ||
+    activeCategory !== "proposal" ||
+    selectedSemester !== "all";
+
+  const handleResetFilters = () => {
+    onSearchChange("");
+    onChangeCategory("proposal");
+    if (onChangeSemester) {
+      onChangeSemester("all");
+    }
+  };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-md p-4 mb-5 shadow-xs space-y-3">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+    <div className="bg-[#FFFFFF] border border-[#E5E7EB] rounded-lg p-4 mb-5 space-y-3.5">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         {/* Category Tabs */}
         <div className="flex flex-wrap items-center gap-1.5">
           {categories.map((cat) => {
-            const Icon = cat.icon;
             const isActive = activeCategory === cat.id;
             return (
               <button
                 key={cat.id}
+                type="button"
                 onClick={() => {
                   onChangeCategory(cat.id);
                   if (cat.id !== "all" && onChangeSemester) {
@@ -79,19 +83,20 @@ export const CourseFilter: React.FC<CourseFilterProps> = ({
                   }
                 }}
                 className={cn(
-                  "flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150 cursor-pointer",
+                  "flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium rounded-md border transition-colors duration-150 cursor-pointer",
                   isActive
-                    ? "bg-red-800 text-white shadow-xs"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    ? "bg-[#7F1D2D] text-white border-[#7F1D2D]"
+                    : "bg-[#F8F9FB] text-[#4B5563] border-[#E5E7EB] hover:bg-[#FFF5F5] hover:text-[#7F1D2D] hover:border-[#7F1D2D]/30"
                 )}
               >
-                <Icon className={cn("w-3.5 h-3.5", isActive ? "text-white" : "text-slate-500")} />
                 <span>{cat.label}</span>
                 {cat.badge && (
                   <span
                     className={cn(
                       "text-[10px] px-1.5 py-0.2 rounded font-semibold",
-                      isActive ? "bg-red-950 text-red-100" : "bg-amber-100 text-amber-800"
+                      isActive
+                        ? "bg-[#651525] text-white"
+                        : "bg-white text-[#4B5563] border border-[#E5E7EB]"
                     )}
                   >
                     {cat.badge}
@@ -102,56 +107,81 @@ export const CourseFilter: React.FC<CourseFilterProps> = ({
           })}
         </div>
 
-        {/* Search Bar */}
-        <div className="relative min-w-[260px]">
-          <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
-            <Search className="w-3.5 h-3.5" />
+        {/* Search Input & Reset Button */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 sm:min-w-[260px]">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#6B7280]">
+              <Search className="w-3.5 h-3.5" />
+            </div>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Tìm tên hoặc mã học phần (VD: INT1306)..."
+              aria-label="Tìm kiếm học phần"
+              className="w-full h-9 pl-8 pr-8 text-xs bg-[#F8F9FB] border border-[#E5E7EB] rounded-md text-[#1F2937] focus:bg-[#FFFFFF] focus:border-[#7F1D2D] focus:ring-2 focus:ring-[#7F1D2D]/15 placeholder:text-[#6B7280]"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => onSearchChange("")}
+                aria-label="Xóa từ khóa tìm kiếm"
+                className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-[#6B7280] hover:text-[#1F2937] cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Tìm theo tên hoặc mã môn (VD: INT1306)..."
-            className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-md focus:bg-white focus:outline-none focus:ring-1 focus:ring-red-800 focus:border-red-800 placeholder:text-slate-400"
-          />
+
+          {hasActiveFilter && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="h-9 px-3 text-xs font-medium text-[#4B5563] bg-[#FFFFFF] hover:bg-[#F8F9FB] border border-[#E5E7EB] rounded-md transition-colors duration-150 whitespace-nowrap cursor-pointer"
+            >
+              Mặc định
+            </button>
+          )}
         </div>
       </div>
 
       {/* Semester Quick Filter Bar (Học kỳ 1 -> Học kỳ 9) */}
       {onChangeSemester && (
-        <div className="pt-2.5 border-t border-slate-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-          <span className="text-[11px] font-bold text-slate-600 flex items-center space-x-1 shrink-0 mr-1">
-            <CalendarRange className="w-3.5 h-3.5 text-red-700" />
-            <span>Lọc theo kỳ CTĐT:</span>
+        <div className="pt-3 border-t border-[#E5E7EB] flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <span className="text-xs font-medium text-[#4B5563] shrink-0 mr-1">
+            Học kỳ CTĐT:
           </span>
           <button
+            type="button"
             onClick={() => {
               onChangeCategory("all");
               onChangeSemester("all");
             }}
             className={cn(
-              "px-2.5 py-1 text-[11px] font-semibold rounded border transition whitespace-nowrap cursor-pointer",
+              "px-2.5 py-1 text-xs font-medium rounded-md border transition-colors duration-150 whitespace-nowrap cursor-pointer",
               activeCategory === "all" && selectedSemester === "all"
-                ? "bg-red-700 text-white border-red-900"
-                : "bg-white text-slate-700 border-slate-200 hover:border-red-800 hover:text-red-700"
+                ? "bg-[#7F1D2D] text-white border-[#7F1D2D]"
+                : "bg-[#FFFFFF] text-[#4B5563] border-[#E5E7EB] hover:border-[#7F1D2D] hover:text-[#7F1D2D]"
             )}
           >
             Tất cả (9 kỳ)
           </button>
           {semesters.map((sem) => {
-            const isSelected = activeCategory === "all" && selectedSemester === sem;
+            const isSelected =
+              activeCategory === "all" && selectedSemester === sem;
             return (
               <button
                 key={sem}
+                type="button"
                 onClick={() => {
                   onChangeCategory("all");
                   onChangeSemester(sem);
                 }}
                 className={cn(
-                  "px-2.5 py-1 text-[11px] font-semibold rounded border transition whitespace-nowrap cursor-pointer",
+                  "px-2.5 py-1 text-xs font-medium rounded-md border transition-colors duration-150 whitespace-nowrap cursor-pointer",
                   isSelected
-                    ? "bg-red-700 text-white border-red-900"
-                    : "bg-white text-slate-700 border-slate-200 hover:border-red-800 hover:text-red-700"
+                    ? "bg-[#7F1D2D] text-white border-[#7F1D2D]"
+                    : "bg-[#FFFFFF] text-[#4B5563] border-[#E5E7EB] hover:border-[#7F1D2D] hover:text-[#7F1D2D]"
                 )}
               >
                 Học kỳ {sem}

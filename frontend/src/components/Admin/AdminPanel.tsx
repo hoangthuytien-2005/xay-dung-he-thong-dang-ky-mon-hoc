@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   RegistrationPeriodData,
   CourseClassData,
@@ -86,11 +86,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     if (onChangeExternalSubTab) onChangeExternalSubTab(tab);
   };
 
-  const [minCredits, setMinCredits] = useState<number>(period?.minCredits || 10);
-  const [maxCredits, setMaxCredits] = useState<number>(period?.maxCredits || 24);
-  const [isActive, setIsActive] = useState<boolean>(period?.isActive ?? true);
+  const [minCreditsOverride, setMinCreditsOverride] = useState<number | null>(
+    null
+  );
+  const [maxCreditsOverride, setMaxCreditsOverride] = useState<number | null>(
+    null
+  );
+  const [isActiveOverride, setIsActiveOverride] = useState<boolean | null>(
+    null
+  );
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveMessage, setSaveMessage] = useState<string>("");
+
+  const minCredits = minCreditsOverride ?? (period?.minCredits || 10);
+  const maxCredits = maxCreditsOverride ?? (period?.maxCredits || 24);
+  const isActive = isActiveOverride ?? (period?.isActive ?? true);
+  const setMinCredits = (val: number) => setMinCreditsOverride(val);
+  const setMaxCredits = (val: number) => setMaxCreditsOverride(val);
+  const setIsActive = (val: boolean) => setIsActiveOverride(val);
 
   // Student status management state
   const [studentSearch, setStudentSearch] = useState<string>("");
@@ -101,14 +114,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     null
   );
   const [studentStatusBanner, setStudentStatusBanner] = useState<string>("");
-
-  useEffect(() => {
-    if (period) {
-      setMinCredits(period.minCredits);
-      setMaxCredits(period.maxCredits);
-      setIsActive(period.isActive);
-    }
-  }, [period]);
 
   const handleSavePeriod = async (nextActive?: boolean) => {
     const targetActive = nextActive !== undefined ? nextActive : isActive;
@@ -173,20 +178,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   return (
     <div className="space-y-6">
       {/* Training Administration Profile Banner */}
-      <div className="bg-white border border-slate-200 rounded-md p-5 shadow-xs">
+      <div className="bg-[#FFFFFF] border border-[#E5E7EB] rounded-lg p-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2">
-              <span className="text-xs bg-red-100 text-red-800 border border-red-300 font-bold px-2 py-0.5 rounded flex items-center space-x-1">
+            <div className="flex items-center space-x-2.5">
+              <span className="text-xs bg-[#FFF5F5] text-[#7F1D2D] border border-[#7F1D2D]/25 font-semibold px-2.5 py-0.5 rounded flex items-center space-x-1">
                 <ShieldCheck className="w-3.5 h-3.5 mr-1" />
-                <span>QUẢN TRỊ ĐÀO TẠO</span>
+                <span>Quản trị Đào tạo</span>
               </span>
-              <h2 className="text-lg font-bold text-slate-900">
+              <h1 className="text-base sm:text-lg font-bold text-[#1F2937]">
                 {admin?.fullName || "Ban Quản Trị Giáo Vụ & Đào Tạo"} (
                 {admin?.adminCode || "ADMIN01"})
-              </h2>
+              </h1>
             </div>
-            <p className="text-xs text-slate-600 mt-1">
+            <p className="text-xs text-[#4B5563] mt-1">
               {admin?.title || "Chuyên viên Quản lý Đào tạo"} •{" "}
               {admin?.department || "Phòng Đào tạo Đại học"}
             </p>
@@ -195,21 +200,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <div className="flex items-center space-x-3">
             <div
               className={cn(
-                "px-3 py-2 rounded-md border text-xs font-bold flex items-center space-x-2",
+                "px-3 py-1.5 rounded-md border text-xs font-semibold flex items-center space-x-2",
                 isActive
-                  ? "bg-emerald-50 border-emerald-300 text-emerald-800"
-                  : "bg-rose-50 border-rose-300 text-rose-800"
+                  ? "bg-emerald-50 border-emerald-200 text-[#15803D]"
+                  : "bg-red-50 border-red-200 text-[#DC2626]"
               )}
             >
               {isActive ? (
                 <>
-                  <Unlock className="w-4 h-4 text-emerald-700" />
-                  <span>CỔNG ĐKTC: ĐANG MỞ</span>
+                  <Unlock className="w-4 h-4 text-[#15803D]" />
+                  <span>Cổng ĐKTC: Đang mở</span>
                 </>
               ) : (
                 <>
-                  <Lock className="w-4 h-4 text-rose-700" />
-                  <span>CỔNG ĐKTC: ĐANG ĐÓNG</span>
+                  <Lock className="w-4 h-4 text-[#DC2626]" />
+                  <span>Cổng ĐKTC: Đang đóng</span>
                 </>
               )}
             </div>
@@ -217,18 +222,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
 
         {/* Sub-tab switcher synced with left sidebar */}
-        <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-slate-100">
+        <div className="flex flex-wrap gap-2 mt-4 pt-3.5 border-t border-[#E5E7EB]">
           <button
             type="button"
             onClick={() => setActiveSubTab("period")}
             className={cn(
-              "flex items-center space-x-2 px-3.5 py-2 text-xs font-bold rounded-md transition cursor-pointer",
+              "px-3.5 py-2 text-xs font-semibold rounded-md border transition-colors duration-150 cursor-pointer",
               activeSubTab === "period"
-                ? "bg-red-800 text-white shadow-2xs"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                ? "bg-[#7F1D2D] text-white border-[#7F1D2D]"
+                : "bg-[#F8F9FB] text-[#4B5563] border-[#E5E7EB] hover:bg-[#FFF5F5] hover:text-[#7F1D2D]"
             )}
           >
-            <Settings className="w-4 h-4" />
             <span>Mở / Đóng cổng đăng ký tín chỉ & Giám sát sĩ số</span>
           </button>
 
@@ -236,13 +240,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             type="button"
             onClick={() => setActiveSubTab("students")}
             className={cn(
-              "flex items-center space-x-2 px-3.5 py-2 text-xs font-bold rounded-md transition cursor-pointer",
+              "px-3.5 py-2 text-xs font-semibold rounded-md border transition-colors duration-150 cursor-pointer",
               activeSubTab === "students"
-                ? "bg-red-800 text-white shadow-2xs"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                ? "bg-[#7F1D2D] text-white border-[#7F1D2D]"
+                : "bg-[#F8F9FB] text-[#4B5563] border-[#E5E7EB] hover:bg-[#FFF5F5] hover:text-[#7F1D2D]"
             )}
           >
-            <UserCog className="w-4 h-4" />
             <span>Quản lý hồ sơ sinh viên (Đánh dấu Bảo lưu / Thôi học)</span>
           </button>
         </div>

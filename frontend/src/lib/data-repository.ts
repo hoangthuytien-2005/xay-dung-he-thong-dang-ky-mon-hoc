@@ -4,7 +4,6 @@ import Course from "../models/Course";
 import CourseClass from "../models/CourseClass";
 import RegistrationPeriod from "../models/RegistrationPeriod";
 import {
-  INITIAL_STUDENT,
   INITIAL_STUDENTS_COLLECTION,
   INITIAL_COURSES,
   INITIAL_COURSE_CLASSES,

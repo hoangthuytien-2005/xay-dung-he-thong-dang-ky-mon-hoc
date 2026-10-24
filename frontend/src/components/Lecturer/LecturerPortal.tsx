@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   LecturerData,
   CourseClassData,
@@ -17,7 +17,6 @@ import {
   BookOpen,
   Clock,
   ChevronRight,
-  ClipboardCheck,
   Calendar,
   CheckCircle2,
   XCircle,
@@ -118,10 +117,9 @@ export const LecturerPortal: React.FC<LecturerPortalProps> = ({
     myClasses.find((c) => c.classCode === selectedClassCode) || myClasses[0];
 
   // Build roster for the selected class from MongoDB students + sample roster
-  const classRoster: RosterStudentItem[] = React.useMemo(() => {
+  const classRoster: RosterStudentItem[] = (() => {
     const map = new Map<string, RosterStudentItem>();
 
-    // First include students from MongoDB who registered for this class or are in the DB
     students.forEach((st) => {
       if (
         selectedClass?.registeredStudents?.includes(st.studentCode) ||
@@ -136,7 +134,6 @@ export const LecturerPortal: React.FC<LecturerPortalProps> = ({
       }
     });
 
-    // Also include sample students so the lecturer has a complete class list to mark attendance
     SAMPLE_STUDENTS_LIST.forEach((s) => {
       if (!map.has(s.studentCode)) {
         map.set(s.studentCode, {
@@ -149,37 +146,36 @@ export const LecturerPortal: React.FC<LecturerPortalProps> = ({
     });
 
     return Array.from(map.values());
-  }, [students, selectedClass]);
+  })();
 
-  // Local state for attendance records of the currently selected class
-  const [attendanceMap, setAttendanceMap] = useState<
+  // Local edits for attendance records keyed by `${classCode}:${studentCode}`
+  const [attendanceEdits, setAttendanceEdits] = useState<
     Record<string, { status: AttendanceStatusType; note: string; updatedAt?: string }>
   >({});
   const [isSavingAttendance, setIsSavingAttendance] = useState<boolean>(false);
   const [savingStudentCode, setSavingStudentCode] = useState<string | null>(null);
   const [attendanceBanner, setAttendanceBanner] = useState<string>("");
 
-  // Sync local attendance state when selectedClass changes
-  useEffect(() => {
-    if (!selectedClass) return;
-    const initial: Record<
-      string,
-      { status: AttendanceStatusType; note: string; updatedAt?: string }
-    > = {};
+  const activeClassCode = selectedClass?.classCode || "";
 
-    classRoster.forEach((st) => {
-      const existing = selectedClass.attendanceRecords?.find(
-        (r) => r.studentCode === st.studentCode
-      );
-      initial[st.studentCode] = {
-        status: existing?.status || "PRESENT",
-        note: existing?.note || "",
-        updatedAt: existing?.updatedAt,
-      };
-    });
-    setAttendanceMap(initial);
-    setAttendanceBanner("");
-  }, [selectedClass?.classCode, selectedClass?.attendanceRecords, classRoster]);
+  const getStudentAttendance = (studentCode: string): {
+    status: AttendanceStatusType;
+    note: string;
+    updatedAt?: string;
+  } => {
+    const editKey = `${activeClassCode}:${studentCode}`;
+    if (attendanceEdits[editKey]) {
+      return attendanceEdits[editKey];
+    }
+    const existing = selectedClass?.attendanceRecords?.find(
+      (r) => r.studentCode === studentCode
+    );
+    return {
+      status: existing?.status || "PRESENT",
+      note: existing?.note || "",
+      updatedAt: existing?.updatedAt,
+    };
+  };
 
   // Schedule Management State
   const [editingClassCode, setEditingClassCode] = useState<string>(
@@ -215,21 +211,25 @@ export const LecturerPortal: React.FC<LecturerPortalProps> = ({
     studentCode: string,
     status: AttendanceStatusType
   ) => {
-    setAttendanceMap((prev) => ({
+    const current = getStudentAttendance(studentCode);
+    const editKey = `${activeClassCode}:${studentCode}`;
+    setAttendanceEdits((prev) => ({
       ...prev,
-      [studentCode]: {
+      [editKey]: {
         status,
-        note: prev[studentCode]?.note || "",
+        note: current.note,
         updatedAt: new Date().toISOString(),
       },
     }));
   };
 
   const handleSingleStudentNoteChange = (studentCode: string, note: string) => {
-    setAttendanceMap((prev) => ({
+    const current = getStudentAttendance(studentCode);
+    const editKey = `${activeClassCode}:${studentCode}`;
+    setAttendanceEdits((prev) => ({
       ...prev,
-      [studentCode]: {
-        status: prev[studentCode]?.status || "PRESENT",
+      [editKey]: {
+        status: current.status,
         note,
         updatedAt: new Date().toISOString(),
       },
@@ -241,29 +241,27 @@ export const LecturerPortal: React.FC<LecturerPortalProps> = ({
     if (!selectedClass) return;
     setSavingStudentCode(studentCode);
     try {
-      const updatedMap = {
-        ...attendanceMap,
-        [studentCode]: {
-          status: attendanceMap[studentCode]?.status || "PRESENT",
-          note: attendanceMap[studentCode]?.note || "",
-          updatedAt: new Date().toISOString(),
-        },
-      };
-      setAttendanceMap(updatedMap);
-
-      const records: AttendanceEntryData[] = classRoster.map((st) => ({
-        studentCode: st.studentCode,
-        status: updatedMap[st.studentCode]?.status || "PRESENT",
-        note: updatedMap[st.studentCode]?.note || "",
-        updatedAt: updatedMap[st.studentCode]?.updatedAt || new Date().toISOString(),
-      }));
+      const nowIso = new Date().toISOString();
+      const targetRecord = getStudentAttendance(studentCode);
+      const records: AttendanceEntryData[] = classRoster.map((st) => {
+        const rec =
+          st.studentCode === studentCode
+            ? { ...targetRecord, updatedAt: nowIso }
+            : getStudentAttendance(st.studentCode);
+        return {
+          studentCode: st.studentCode,
+          status: rec.status,
+          note: rec.note,
+          updatedAt: rec.updatedAt || nowIso,
+        };
+      });
 
       const res = await onSaveAttendance(selectedClass.classCode, records);
       if (res.success) {
         const stObj = classRoster.find((s) => s.studentCode === studentCode);
         setAttendanceBanner(
           `Đã lưu điểm danh cá nhân cho sinh viên ${stObj?.fullName || studentCode} (${
-            ATTENDANCE_STATUS_CONFIG[updatedMap[studentCode].status].label
+            ATTENDANCE_STATUS_CONFIG[targetRecord.status].label
           }).`
         );
       }
@@ -279,27 +277,28 @@ export const LecturerPortal: React.FC<LecturerPortalProps> = ({
   ) => {
     if (!selectedClass) return;
     const nowIso = new Date().toISOString();
-    const nextMap: Record<
+    const nextEdits: Record<
       string,
       { status: AttendanceStatusType; note: string; updatedAt?: string }
-    > = {};
+    > = { ...attendanceEdits };
 
     classRoster.forEach((st) => {
-      nextMap[st.studentCode] = {
+      const current = getStudentAttendance(st.studentCode);
+      nextEdits[`${activeClassCode}:${st.studentCode}`] = {
         status,
-        note: attendanceMap[st.studentCode]?.note || "",
+        note: current.note,
         updatedAt: nowIso,
       };
     });
-    setAttendanceMap(nextMap);
+    setAttendanceEdits(nextEdits);
 
     if (autoSave) {
       setIsSavingAttendance(true);
       try {
         const records: AttendanceEntryData[] = classRoster.map((st) => ({
           studentCode: st.studentCode,
-          status: nextMap[st.studentCode].status,
-          note: nextMap[st.studentCode].note,
+          status,
+          note: getStudentAttendance(st.studentCode).note,
           updatedAt: nowIso,
         }));
         const res = await onSaveAttendance(selectedClass.classCode, records);
@@ -320,12 +319,15 @@ export const LecturerPortal: React.FC<LecturerPortalProps> = ({
     setIsSavingAttendance(true);
     try {
       const nowIso = new Date().toISOString();
-      const records: AttendanceEntryData[] = classRoster.map((st) => ({
-        studentCode: st.studentCode,
-        status: attendanceMap[st.studentCode]?.status || "PRESENT",
-        note: attendanceMap[st.studentCode]?.note || "",
-        updatedAt: attendanceMap[st.studentCode]?.updatedAt || nowIso,
-      }));
+      const records: AttendanceEntryData[] = classRoster.map((st) => {
+        const rec = getStudentAttendance(st.studentCode);
+        return {
+          studentCode: st.studentCode,
+          status: rec.status,
+          note: rec.note,
+          updatedAt: rec.updatedAt || nowIso,
+        };
+      });
       const res = await onSaveAttendance(selectedClass.classCode, records);
       if (res.success) {
         setAttendanceBanner(
@@ -407,7 +409,7 @@ export const LecturerPortal: React.FC<LecturerPortalProps> = ({
   );
 
   // Attendance statistics for selected class
-  const attendanceStats = React.useMemo(() => {
+  const attendanceStats = (() => {
     const counts: Record<AttendanceStatusType, number> = {
       PRESENT: 0,
       LATE: 0,
@@ -415,68 +417,67 @@ export const LecturerPortal: React.FC<LecturerPortalProps> = ({
       ABSENT: 0,
     };
     classRoster.forEach((st) => {
-      const stStatus = attendanceMap[st.studentCode]?.status || "PRESENT";
+      const stStatus = getStudentAttendance(st.studentCode).status;
       counts[stStatus] = (counts[stStatus] || 0) + 1;
     });
     return counts;
-  }, [classRoster, attendanceMap]);
+  })();
 
   return (
     <div className="space-y-6">
       {/* Lecturer Header Card */}
-      <div className="bg-white border border-slate-200 rounded-md p-5 shadow-xs">
+      <div className="bg-[#FFFFFF] border border-[#E5E7EB] rounded-lg p-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2">
-              <span className="text-xs bg-red-100 text-red-800 border border-red-300 font-bold px-2 py-0.5 rounded">
-                GIẢNG VIÊN
+            <div className="flex items-center space-x-2.5">
+              <span className="text-xs bg-[#FFF5F5] text-[#7F1D2D] border border-[#7F1D2D]/25 font-semibold px-2.5 py-0.5 rounded">
+                Giảng viên
               </span>
-              <h2 className="text-lg font-bold text-slate-900">
+              <h1 className="text-base sm:text-lg font-bold text-[#1F2937]">
                 {lecturer.fullName} ({lecturer.lecturerCode})
-              </h2>
+              </h1>
             </div>
-            <p className="text-xs text-slate-600 mt-1">
+            <p className="text-xs text-[#4B5563] mt-1">
               {lecturer.title} • {lecturer.department}
             </p>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-2">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#6B7280] mt-2">
               <span>
-                Email: <strong className="text-slate-800">{lecturer.email}</strong>
+                Email: <strong className="text-[#1F2937]">{lecturer.email}</strong>
               </span>
               <span>•</span>
               <span>
-                Điện thoại: <strong className="text-slate-800">{lecturer.phone}</strong>
+                Điện thoại: <strong className="text-[#1F2937]">{lecturer.phone}</strong>
               </span>
               <span>•</span>
               <span>
                 Lớp phụ trách:{" "}
-                <strong className="text-red-800 font-bold">
+                <strong className="text-[#7F1D2D] font-semibold">
                   {myClasses.length} lớp học phần
                 </strong>
               </span>
             </div>
           </div>
 
-          <div className="bg-slate-50 border border-slate-200 rounded-md p-3 text-right">
-            <span className="text-xs text-slate-500">Học kỳ giảng dạy</span>
-            <div className="text-sm font-bold text-slate-900 mt-0.5">
+          <div className="bg-[#F8F9FB] border border-[#E5E7EB] rounded-lg p-3 text-right">
+            <span className="text-xs text-[#6B7280]">Học kỳ giảng dạy</span>
+            <div className="text-sm font-semibold text-[#1F2937] mt-0.5">
               Học kỳ 1 • Năm học 2024 - 2025
             </div>
           </div>
         </div>
 
         {/* Sub-navigation bar synced with Left Sidebar */}
-        <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-slate-100">
+        <div className="flex flex-wrap gap-2 mt-4 pt-3.5 border-t border-[#E5E7EB]">
           <button
             type="button"
             onClick={() => setActiveSubTab("attendance")}
             className={cn(
-              "flex items-center space-x-2 px-3.5 py-2 text-xs font-bold rounded-md transition cursor-pointer",
+              "px-3.5 py-2 text-xs font-semibold rounded-md border transition-colors duration-150 cursor-pointer",
               activeSubTab === "attendance"
-                ? "bg-red-800 text-white shadow-2xs"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                ? "bg-[#7F1D2D] text-white border-[#7F1D2D]"
+                : "bg-[#F8F9FB] text-[#4B5563] border-[#E5E7EB] hover:bg-[#FFF5F5] hover:text-[#7F1D2D]"
             )}
           >
-            <ClipboardCheck className="w-4 h-4" />
             <span>Điểm danh sinh viên (Từng cá nhân & Toàn bộ lớp)</span>
           </button>
 
@@ -484,13 +485,12 @@ export const LecturerPortal: React.FC<LecturerPortalProps> = ({
             type="button"
             onClick={() => setActiveSubTab("schedule")}
             className={cn(
-              "flex items-center space-x-2 px-3.5 py-2 text-xs font-bold rounded-md transition cursor-pointer",
+              "px-3.5 py-2 text-xs font-semibold rounded-md border transition-colors duration-150 cursor-pointer",
               activeSubTab === "schedule"
-                ? "bg-red-800 text-white shadow-2xs"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                ? "bg-[#7F1D2D] text-white border-[#7F1D2D]"
+                : "bg-[#F8F9FB] text-[#4B5563] border-[#E5E7EB] hover:bg-[#FFF5F5] hover:text-[#7F1D2D]"
             )}
           >
-            <Calendar className="w-4 h-4" />
             <span>Quản lý lịch dạy từng lớp học phần</span>
           </button>
         </div>
@@ -771,10 +771,7 @@ export const LecturerPortal: React.FC<LecturerPortalProps> = ({
                         </tr>
                       ) : (
                         filteredStudents.map((s, idx) => {
-                          const currentRecord = attendanceMap[s.studentCode] || {
-                            status: "PRESENT" as AttendanceStatusType,
-                            note: "",
-                          };
+                          const currentRecord = getStudentAttendance(s.studentCode);
                           const isSavingThis = savingStudentCode === s.studentCode;
 
                           return (

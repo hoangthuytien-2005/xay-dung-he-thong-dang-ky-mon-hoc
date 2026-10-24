@@ -1,7 +1,6 @@
 import assert from "node:assert";
 import {
   checkScheduleOverlap,
-  checkTimeConflict,
   checkPrerequisites,
   checkCreditLimit,
   checkSlotAvailability,

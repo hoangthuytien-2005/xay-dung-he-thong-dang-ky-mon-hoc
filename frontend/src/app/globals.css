@@ -1,17 +1,74 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  /* Primary Burgundy Palette */
+  --primary: #7F1D2D;
+  --primary-hover: #651525;
+  --primary-light: #FFF5F5;
+
+  /* Neutral Surfaces & Borders */
+  --bg-main: #FFFFFF;
+  --bg-secondary: #F8F9FB;
+  --border-color: #E5E7EB;
+
+  /* Typography Colors */
+  --text-main: #1F2937;
+  --text-secondary: #4B5563;
+  --text-muted: #6B7280;
+
+  /* Semantic Colors */
+  --semantic-success: #15803D;
+  --semantic-warning: #D97706;
+  --semantic-error: #DC2626;
+  --semantic-info: #2563EB;
+}
+
+*,
+*::before,
+*::after,
+body,
+input,
+button,
+select,
+textarea,
+code,
+pre,
+.font-mono,
+.font-sans {
+  font-family: Arial, Helvetica, "Segoe UI", Roboto, sans-serif !important;
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Hide scrollbar for tabs */
+/* Keyboard accessibility focus ring */
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
+/* Subtle interactive transitions */
+button,
+a,
+input,
+select,
+textarea {
+  transition-property: color, background-color, border-color, opacity, transform, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Hide scrollbar for horizontal filter bars */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -20,13 +77,30 @@ body {
   scrollbar-width: none;
 }
 
+/* Respect user reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Print mode optimization */
 @media print {
-  header, nav, footer, button, .no-print {
+  header,
+  aside,
+  nav,
+  footer,
+  button,
+  .no-print {
     display: none !important;
   }
   body {
-    background: white !important;
-    color: black !important;
+    background: #FFFFFF !important;
+    color: #000000 !important;
   }
 }

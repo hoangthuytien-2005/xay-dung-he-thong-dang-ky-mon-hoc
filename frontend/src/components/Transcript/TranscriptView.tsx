@@ -2,7 +2,11 @@
 
 import React, { useState } from "react";
 import { StudentData, CompletedCourseData } from "@/lib/mock-data";
-import { Award, FileText, CalendarRange, CheckCircle2, XCircle } from "lucide-react";
+import {
+  FileText,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TranscriptViewProps {
@@ -28,25 +32,24 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({ student }) => {
   const cpa = student.cpa || 0;
   const totalEarned = student.accumulatedCredits || 0;
 
-  // Academic standing classification
   let academicRanking = "Khá";
-  let rankingColor = "text-blue-700 bg-blue-50 border-blue-200";
+  let rankingColor = "text-[#2563EB] bg-blue-50 border-blue-200";
 
   if (cpa >= 3.6) {
     academicRanking = "Xuất sắc";
-    rankingColor = "text-emerald-700 bg-emerald-50 border-emerald-200";
+    rankingColor = "text-[#15803D] bg-emerald-50 border-emerald-200";
   } else if (cpa >= 3.2) {
     academicRanking = "Giỏi";
-    rankingColor = "text-blue-700 bg-blue-50 border-blue-200";
+    rankingColor = "text-[#2563EB] bg-blue-50 border-blue-200";
   } else if (cpa >= 2.5) {
     academicRanking = "Khá";
-    rankingColor = "text-slate-700 bg-slate-100 border-slate-300";
+    rankingColor = "text-[#1F2937] bg-[#F8F9FB] border-[#E5E7EB]";
   } else if (cpa >= 2.0) {
     academicRanking = "Trung bình";
-    rankingColor = "text-amber-700 bg-amber-50 border-amber-200";
+    rankingColor = "text-[#D97706] bg-amber-50 border-amber-200";
   } else {
     academicRanking = "Cảnh báo học tập";
-    rankingColor = "text-rose-700 bg-rose-50 border-rose-200";
+    rankingColor = "text-[#DC2626] bg-red-50 border-red-200";
   }
 
   // Group completed courses by semester
@@ -94,95 +97,114 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({ student }) => {
       : semesterGroups.filter((g) => g.semesterKey === selectedSemFilter);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Top Summary Card */}
-      <div className="bg-white border border-slate-200 rounded-md p-5 shadow-xs">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-slate-200 gap-3">
+      <div className="bg-[#FFFFFF] border border-[#E5E7EB] rounded-lg p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-[#E5E7EB] gap-3">
           <div>
-            <h2 className="text-base font-bold text-slate-900 flex items-center space-x-2">
-              <Award className="w-5 h-5 text-red-700" />
-              <span>Kết Quả Học Tập & Bảng Điểm Theo Từng Học Kỳ</span>
-            </h2>
-            <p className="text-xs text-slate-500">
-              Sinh viên: <strong className="text-slate-800">{student.fullName}</strong> ({student.studentCode}) • Lớp: {student.administrativeClass}
+            <h1 className="text-base sm:text-lg font-bold text-[#1F2937]">
+              Kết quả học tập & Bảng điểm theo từng học kỳ
+            </h1>
+            <p className="text-xs text-[#6B7280] mt-0.5">
+              Sinh viên:{" "}
+              <strong className="text-[#1F2937]">{student.fullName}</strong> (
+              {student.studentCode}) • Lớp: {student.administrativeClass}
             </p>
           </div>
 
           <button
+            type="button"
             onClick={() => window.print()}
-            className="inline-flex items-center space-x-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md border border-slate-300 font-medium transition cursor-pointer"
+            className="inline-flex items-center space-x-1.5 text-xs bg-[#FFFFFF] hover:bg-[#F8F9FB] text-[#1F2937] px-3 py-1.5 rounded-md border border-[#E5E7EB] font-medium transition-colors duration-150 cursor-pointer self-start sm:self-auto"
           >
-            <FileText className="w-3.5 h-3.5" />
+            <FileText className="w-3.5 h-3.5 text-[#4B5563]" />
             <span>In bảng điểm</span>
           </button>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-          <div className="bg-slate-50 border border-slate-200 rounded-md p-3.5">
-            <span className="text-xs text-slate-500 font-medium">Điểm tích lũy toàn khóa (CPA)</span>
-            <div className="text-2xl font-bold text-slate-900 mt-1 flex items-baseline space-x-1">
+        {/* Summary Metrics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mb-4">
+          <div className="bg-[#F8F9FB] border border-[#E5E7EB] rounded-lg p-4">
+            <span className="text-xs text-[#6B7280]">
+              Điểm trung bình tích lũy (CPA)
+            </span>
+            <div className="text-xl font-bold text-[#1F2937] mt-1 flex items-baseline space-x-1">
               <span>{cpa.toFixed(2)}</span>
-              <span className="text-xs text-slate-400 font-normal">/ 4.0</span>
+              <span className="text-xs text-[#6B7280] font-normal">/ 4.0</span>
             </div>
-            <span className="text-[11px] text-slate-400">Thang điểm 4 hệ thống tín chỉ</span>
+            <span className="text-[11px] text-[#6B7280]">
+              Thang điểm 4 chuẩn tín chỉ
+            </span>
           </div>
 
-          <div className="bg-slate-50 border border-slate-200 rounded-md p-3.5">
-            <span className="text-xs text-slate-500 font-medium">Tín chỉ tích lũy</span>
-            <div className="text-2xl font-bold text-red-700 mt-1 flex items-baseline space-x-1">
+          <div className="bg-[#F8F9FB] border border-[#E5E7EB] rounded-lg p-4">
+            <span className="text-xs text-[#6B7280]">Tín chỉ tích lũy</span>
+            <div className="text-xl font-bold text-[#7F1D2D] mt-1 flex items-baseline space-x-1">
               <span>{totalEarned}</span>
-              <span className="text-xs text-slate-400 font-normal">/ 150 TC</span>
+              <span className="text-xs text-[#6B7280] font-normal">
+                / 150 TC
+              </span>
             </div>
-            <span className="text-[11px] text-slate-400">Đạt {Math.round((totalEarned / 150) * 100)}% toàn khóa</span>
+            <span className="text-[11px] text-[#6B7280]">
+              Hoàn thành {Math.round((totalEarned / 150) * 100)}% chương trình
+            </span>
           </div>
 
-          <div className="bg-slate-50 border border-slate-200 rounded-md p-3.5">
-            <span className="text-xs text-slate-500 font-medium">Xếp loại học lực</span>
-            <div className="mt-1">
-              <span className={cn("text-sm font-bold px-2 py-0.5 rounded border inline-block", rankingColor)}>
+          <div className="bg-[#F8F9FB] border border-[#E5E7EB] rounded-lg p-4">
+            <span className="text-xs text-[#6B7280]">Xếp loại học lực</span>
+            <div className="mt-1.5">
+              <span
+                className={cn(
+                  "text-xs font-semibold px-2.5 py-0.5 rounded border inline-block",
+                  rankingColor
+                )}
+              >
                 {academicRanking}
               </span>
             </div>
-            <span className="text-[11px] text-slate-400 block mt-1">Cập nhật theo kỳ gần nhất</span>
+            <span className="text-[11px] text-[#6B7280] block mt-1.5">
+              Xét theo CPA tích lũy hiện hành
+            </span>
           </div>
 
-          <div className="bg-slate-50 border border-slate-200 rounded-md p-3.5">
-            <span className="text-xs text-slate-500 font-medium">Cố vấn học tập</span>
-            <div className="text-xs font-bold text-slate-800 mt-1 truncate">
+          <div className="bg-[#F8F9FB] border border-[#E5E7EB] rounded-lg p-4">
+            <span className="text-xs text-[#6B7280]">Cố vấn học tập</span>
+            <div className="text-sm font-semibold text-[#1F2937] mt-1 truncate">
               {student.advisorName}
             </div>
-            <span className="text-[11px] text-slate-400">Khoa Công nghệ Thông tin 1</span>
+            <span className="text-[11px] text-[#6B7280]">
+              Khoa Công nghệ Thông tin 1
+            </span>
           </div>
         </div>
 
         {/* Semester Filter Bar */}
-        <div className="pt-3 border-t border-slate-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-          <span className="text-xs font-bold text-slate-600 flex items-center space-x-1 shrink-0 mr-1">
-            <CalendarRange className="w-3.5 h-3.5 text-red-700" />
-            <span>Chọn học kỳ:</span>
+        <div className="pt-3.5 border-t border-[#E5E7EB] flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <span className="text-xs font-medium text-[#4B5563] shrink-0 mr-1">
+            Chọn học kỳ:
           </span>
           <button
+            type="button"
             onClick={() => setSelectedSemFilter("all")}
             className={cn(
-              "px-3 py-1 text-xs font-semibold rounded border transition whitespace-nowrap cursor-pointer",
+              "px-3 py-1 text-xs font-medium rounded-md border transition-colors duration-150 whitespace-nowrap cursor-pointer",
               selectedSemFilter === "all"
-                ? "bg-red-800 text-white border-red-900"
-                : "bg-white text-slate-700 border-slate-200 hover:border-red-800 hover:text-red-700"
+                ? "bg-[#7F1D2D] text-white border-[#7F1D2D]"
+                : "bg-[#FFFFFF] text-[#4B5563] border-[#E5E7EB] hover:border-[#7F1D2D] hover:text-[#7F1D2D]"
             )}
           >
-            Tất cả các kỳ ({semesterGroups.length} học kỳ)
+            Tất cả ({semesterGroups.length} học kỳ)
           </button>
           {semesterGroups.map((group, index) => (
             <button
               key={group.semesterKey}
+              type="button"
               onClick={() => setSelectedSemFilter(group.semesterKey)}
               className={cn(
-                "px-3 py-1 text-xs font-semibold rounded border transition whitespace-nowrap cursor-pointer",
+                "px-3 py-1 text-xs font-medium rounded-md border transition-colors duration-150 whitespace-nowrap cursor-pointer",
                 selectedSemFilter === group.semesterKey
-                  ? "bg-red-800 text-white border-red-900"
-                  : "bg-white text-slate-700 border-slate-200 hover:border-red-800 hover:text-red-700"
+                  ? "bg-[#7F1D2D] text-white border-[#7F1D2D]"
+                  : "bg-[#FFFFFF] text-[#4B5563] border-[#E5E7EB] hover:border-[#7F1D2D] hover:text-[#7F1D2D]"
               )}
             >
               Học kỳ {index + 1} ({group.semesterKey})
@@ -196,30 +218,38 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({ student }) => {
         {visibleSemesterGroups.map((group) => (
           <div
             key={group.semesterKey}
-            className="bg-white border border-slate-200 rounded-md overflow-hidden shadow-xs"
+            className="bg-[#FFFFFF] border border-[#E5E7EB] rounded-lg overflow-hidden"
           >
             {/* Semester Table Header Banner */}
-            <div className="bg-red-50/70 border-b border-red-200 px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="bg-[#FFF5F5] border-b border-[#E5E7EB] px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center space-x-2.5">
-                <span className="bg-red-800 text-white text-xs font-bold px-2.5 py-1 rounded">
+                <span className="bg-[#7F1D2D] text-white text-xs font-semibold px-2.5 py-1 rounded-md font-mono">
                   {group.semesterKey}
                 </span>
                 <div>
-                  <h3 className="text-sm font-bold text-red-950">{group.title}</h3>
-                  <p className="text-[11px] text-slate-600">
-                    Số môn học trong kỳ: <strong>{group.courses.length} môn</strong>
+                  <h2 className="text-sm font-bold text-[#1F2937]">
+                    {group.title}
+                  </h2>
+                  <p className="text-[11px] text-[#6B7280]">
+                    Số học phần trong kỳ:{" "}
+                    <strong className="text-[#1F2937]">
+                      {group.courses.length} môn
+                    </strong>
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="bg-white border border-slate-200 px-2.5 py-1 rounded font-medium text-slate-700">
-                  Tín chỉ đăng ký: <strong className="text-slate-900">{group.totalCreditsInSem} TC</strong>
+                <span className="bg-[#FFFFFF] border border-[#E5E7EB] px-2.5 py-1 rounded-md text-[#4B5563]">
+                  Tín chỉ ĐK:{" "}
+                  <strong className="text-[#1F2937]">
+                    {group.totalCreditsInSem} TC
+                  </strong>
                 </span>
-                <span className="bg-white border border-emerald-200 px-2.5 py-1 rounded font-medium text-emerald-800">
+                <span className="bg-[#FFFFFF] border border-[#E5E7EB] px-2.5 py-1 rounded-md text-[#15803D]">
                   Tín chỉ đạt: <strong>{group.passedCreditsInSem} TC</strong>
                 </span>
-                <span className="bg-white border border-red-300 px-2.5 py-1 rounded font-semibold text-red-800">
+                <span className="bg-[#FFFFFF] border border-[#7F1D2D]/30 px-2.5 py-1 rounded-md font-semibold text-[#7F1D2D]">
                   GPA học kỳ: <strong>{group.gpa.toFixed(2)} / 4.0</strong>
                 </span>
               </div>
@@ -229,51 +259,74 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({ student }) => {
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-100 text-slate-700 border-b border-slate-200">
-                    <th className="py-2.5 px-3 font-semibold w-12 text-center">STT</th>
-                    <th className="py-2.5 px-3 font-semibold w-28">Mã học phần</th>
+                  <tr className="bg-[#F8F9FB] text-[#4B5563] border-b border-[#E5E7EB]">
+                    <th className="py-2.5 px-3 font-semibold w-12 text-center">
+                      STT
+                    </th>
+                    <th className="py-2.5 px-3 font-semibold w-28">
+                      Mã học phần
+                    </th>
                     <th className="py-2.5 px-3 font-semibold">Tên học phần</th>
-                    <th className="py-2.5 px-2 font-semibold text-center w-20">Số TC</th>
-                    <th className="py-2.5 px-2 font-semibold text-center w-24">Điểm chữ</th>
-                    <th className="py-2.5 px-2 font-semibold text-center w-24">Điểm hệ 4</th>
-                    <th className="py-2.5 px-3 font-semibold text-center w-32">Kết quả</th>
+                    <th className="py-2.5 px-2 font-semibold text-center w-20">
+                      Số TC
+                    </th>
+                    <th className="py-2.5 px-2 font-semibold text-center w-24">
+                      Điểm chữ
+                    </th>
+                    <th className="py-2.5 px-2 font-semibold text-center w-24">
+                      Điểm hệ 4
+                    </th>
+                    <th className="py-2.5 px-3 font-semibold text-center w-32">
+                      Kết quả
+                    </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[#E5E7EB]">
                   {group.courses.map((c, idx) => (
-                    <tr key={`${group.semesterKey}-${c.courseCode}`} className="hover:bg-slate-50 transition-colors">
-                      <td className="py-2.5 px-3 text-center text-slate-500 font-medium">{idx + 1}</td>
-                      <td className="py-2.5 px-3 font-mono font-bold text-slate-900">{c.courseCode}</td>
-                      <td className="py-2.5 px-3 font-medium text-slate-900">{c.courseName}</td>
-                      <td className="py-2.5 px-2 text-center text-slate-800 font-bold">{c.credits}</td>
-                      <td className="py-2.5 px-2 text-center">
+                    <tr
+                      key={`${group.semesterKey}-${c.courseCode}`}
+                      className="hover:bg-[#F8F9FB] transition-colors duration-150"
+                    >
+                      <td className="py-3 px-3 text-center text-[#6B7280]">
+                        {idx + 1}
+                      </td>
+                      <td className="py-3 px-3 font-mono font-semibold text-[#1F2937]">
+                        {c.courseCode}
+                      </td>
+                      <td className="py-3 px-3 font-medium text-[#1F2937]">
+                        {c.courseName}
+                      </td>
+                      <td className="py-3 px-2 text-center text-[#1F2937] font-semibold">
+                        {c.credits}
+                      </td>
+                      <td className="py-3 px-2 text-center">
                         <span
                           className={cn(
-                            "font-bold font-mono px-2 py-0.5 rounded border",
+                            "font-semibold font-mono px-2 py-0.5 rounded border",
                             c.grade === "A" || c.grade === "A+"
-                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                              ? "bg-emerald-50 text-[#15803D] border-emerald-200"
                               : c.grade === "B+" || c.grade === "B"
-                              ? "bg-blue-50 text-blue-800 border-blue-200"
+                              ? "bg-blue-50 text-[#2563EB] border-blue-200"
                               : c.grade === "F"
-                              ? "bg-rose-50 text-rose-800 border-rose-200"
-                              : "bg-amber-50 text-amber-800 border-amber-200"
+                              ? "bg-red-50 text-[#DC2626] border-red-200"
+                              : "bg-amber-50 text-[#D97706] border-amber-200"
                           )}
                         >
                           {c.grade}
                         </span>
                       </td>
-                      <td className="py-2.5 px-2 text-center text-slate-800 font-mono font-semibold">
+                      <td className="py-3 px-2 text-center text-[#1F2937] font-mono font-semibold">
                         {c.gradePoint.toFixed(1)}
                       </td>
-                      <td className="py-2.5 px-3 text-center">
+                      <td className="py-3 px-3 text-center">
                         {c.isPassed ? (
-                          <span className="inline-flex items-center space-x-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span className="inline-flex items-center space-x-1 text-[11px] font-medium text-[#15803D] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                            <CheckCircle2 className="w-3 h-3 text-[#15803D]" />
                             <span>Đạt</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center space-x-1 text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
-                            <XCircle className="w-3 h-3 text-rose-600" />
+                          <span className="inline-flex items-center space-x-1 text-[11px] font-medium text-[#DC2626] bg-red-50 border border-red-200 px-2 py-0.5 rounded">
+                            <XCircle className="w-3 h-3 text-[#DC2626]" />
                             <span>Học lại (F)</span>
                           </span>
                         )}
@@ -282,18 +335,25 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({ student }) => {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-slate-50 border-t border-slate-200 font-semibold text-slate-800">
-                    <td colSpan={3} className="py-2 px-3 text-right">
+                  <tr className="bg-[#F8F9FB] border-t border-[#E5E7EB] font-semibold text-[#1F2937]">
+                    <td colSpan={3} className="py-2.5 px-3 text-right">
                       Tổng kết {group.title}:
                     </td>
-                    <td className="py-2 px-2 text-center text-red-700 font-bold">
+                    <td className="py-2.5 px-2 text-center text-[#7F1D2D] font-bold">
                       {group.passedCreditsInSem} / {group.totalCreditsInSem} TC
                     </td>
-                    <td colSpan={2} className="py-2 px-2 text-center text-slate-700">
-                      GPA kỳ: <strong className="text-red-800">{group.gpa.toFixed(2)}</strong>
+                    <td
+                      colSpan={2}
+                      className="py-2.5 px-2 text-center text-[#4B5563]"
+                    >
+                      GPA kỳ:{" "}
+                      <strong className="text-[#7F1D2D]">
+                        {group.gpa.toFixed(2)}
+                      </strong>
                     </td>
-                    <td className="py-2 px-3 text-center text-emerald-700">
-                      Hoàn thành {group.courses.filter((x) => x.isPassed).length}/{group.courses.length} môn
+                    <td className="py-2.5 px-3 text-center text-[#15803D]">
+                      Đạt {group.courses.filter((x) => x.isPassed).length}/
+                      {group.courses.length} môn
                     </td>
                   </tr>
                 </tfoot>

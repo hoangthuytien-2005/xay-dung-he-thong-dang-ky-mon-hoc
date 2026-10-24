@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { StudentData, LecturerData, AdminData } from "@/lib/mock-data";
 import { UserRole } from "@/components/Navbar";
 import { X, User } from "lucide-react";
@@ -21,6 +21,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onClose,
   currentUser,
 }) => {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const isStudent = currentUser.role === "student";
@@ -68,19 +78,26 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       : "Đang theo học";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-      <div className="bg-white rounded-md border border-slate-300 shadow-xl max-w-lg w-full overflow-hidden">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="profile-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 animate-in fade-in duration-150"
+    >
+      <div className="bg-[#FFFFFF] rounded-lg border border-[#E5E7EB] shadow-lg max-w-lg w-full overflow-hidden">
         {/* Header */}
-        <div className="bg-red-800 text-white px-5 py-4 flex items-center justify-between">
+        <div className="bg-[#7F1D2D] text-white px-5 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded bg-red-950 flex items-center justify-center text-white">
-              <User className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-md bg-[#651525] border border-white/15 flex items-center justify-center text-white">
+              <User className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-sm">Hồ Sơ Cá Nhân</h3>
-              <p className="text-[11px] text-red-200">
+              <h3 id="profile-modal-title" className="font-bold text-sm">
+                Hồ sơ cá nhân
+              </h3>
+              <p className="text-[11px] text-white/80">
                 {isStudent
-                  ? "Thông tin sinh viên chính quy"
+                  ? "Thông tin sinh viên đại học chính quy"
                   : isLecturer
                   ? "Thông tin cán bộ giảng viên"
                   : "Thông tin cán bộ quản trị đào tạo"}
@@ -88,65 +105,91 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-red-200 hover:text-white p-1 rounded hover:bg-red-900 transition"
+            aria-label="Đóng hồ sơ"
+            className="text-white/80 hover:text-white p-1 rounded-md hover:bg-[#651525] transition-colors duration-150 cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content */}
         <div className="p-5 space-y-4 text-xs">
-          {/* Avatar and Main Info Banner */}
-          <div className="flex items-center space-x-4 pb-4 border-b border-slate-100">
-            <div className="w-14 h-14 rounded-full bg-slate-100 border-2 border-red-800 flex items-center justify-center text-red-800 font-bold text-lg shrink-0 font-mono">
-              {isStudent ? student?.studentCode.slice(-2) : code?.slice(0, 4)}
+          <div className="flex items-center space-x-4 pb-4 border-b border-[#E5E7EB]">
+            <div className="w-14 h-14 rounded-lg bg-[#FFF5F5] border border-[#7F1D2D]/30 flex items-center justify-center text-[#7F1D2D] font-bold text-base shrink-0 font-mono">
+              {isStudent ? student?.studentCode.slice(-3) : code?.slice(0, 4)}
             </div>
             <div>
-              <h4 className="font-bold text-base text-slate-900">
-                {fullName}
-              </h4>
-              <p className="text-slate-500 font-mono text-[11px]">
-                Mã định danh: <strong className="text-slate-800">{code}</strong>
+              <h4 className="font-bold text-base text-[#1F2937]">{fullName}</h4>
+              <p className="text-[#6B7280] font-mono text-[11px] mt-0.5">
+                Mã định danh:{" "}
+                <strong className="text-[#1F2937]">{code}</strong>
               </p>
-              <span className="inline-block mt-1 text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-800 border border-red-300 px-2 py-0.2 rounded">
-                {isStudent ? `Sinh viên Chính quy (${academicStatusLabel})` : titleOrClass}
+              <span className="inline-block mt-1.5 text-[11px] font-medium bg-[#FFF5F5] text-[#7F1D2D] border border-[#7F1D2D]/25 px-2.5 py-0.5 rounded">
+                {isStudent
+                  ? `Sinh viên chính quy • ${academicStatusLabel}`
+                  : titleOrClass}
               </span>
             </div>
           </div>
 
           {/* Details Grid */}
-          <div className="grid grid-cols-2 gap-3 text-slate-700">
-            <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-              <span className="text-[11px] text-slate-400 block mb-0.5">Khoa / Đơn vị quản lý</span>
-              <strong className="text-slate-800">{department}</strong>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[#4B5563]">
+            <div className="bg-[#F8F9FB] p-3 rounded-md border border-[#E5E7EB]">
+              <span className="text-[11px] text-[#6B7280] block mb-0.5">
+                Khoa / Đơn vị quản lý
+              </span>
+              <strong className="text-[#1F2937] font-semibold">
+                {department}
+              </strong>
             </div>
 
-            <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-              <span className="text-[11px] text-slate-400 block mb-0.5">{isStudent ? "Lớp hành chính" : "Học vị / Chức danh"}</span>
-              <strong className="text-slate-800">{titleOrClass}</strong>
+            <div className="bg-[#F8F9FB] p-3 rounded-md border border-[#E5E7EB]">
+              <span className="text-[11px] text-[#6B7280] block mb-0.5">
+                {isStudent ? "Lớp hành chính" : "Học vị / Chức danh"}
+              </span>
+              <strong className="text-[#1F2937] font-semibold">
+                {titleOrClass}
+              </strong>
             </div>
 
-            <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-              <span className="text-[11px] text-slate-400 block mb-0.5">Hộp thư điện tử (Email)</span>
-              <strong className="text-slate-800 font-mono text-[11px]">{email}</strong>
+            <div className="bg-[#F8F9FB] p-3 rounded-md border border-[#E5E7EB]">
+              <span className="text-[11px] text-[#6B7280] block mb-0.5">
+                Hộp thư điện tử (Email)
+              </span>
+              <strong className="text-[#1F2937] font-mono text-[11px] break-all">
+                {email}
+              </strong>
             </div>
 
-            <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-              <span className="text-[11px] text-slate-400 block mb-0.5">{isStudent ? "Cố vấn học tập" : "Điện thoại liên hệ"}</span>
-              <strong className="text-slate-800">{contact}</strong>
+            <div className="bg-[#F8F9FB] p-3 rounded-md border border-[#E5E7EB]">
+              <span className="text-[11px] text-[#6B7280] block mb-0.5">
+                {isStudent ? "Cố vấn học tập" : "Điện thoại liên hệ"}
+              </span>
+              <strong className="text-[#1F2937] font-semibold">
+                {contact}
+              </strong>
             </div>
 
             {isStudent && (
               <>
-                <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-                  <span className="text-[11px] text-slate-400 block mb-0.5">Điểm tích lũy (CPA)</span>
-                  <strong className="text-emerald-700 text-sm">{student?.cpa.toFixed(2)} / 4.0</strong>
+                <div className="bg-[#F8F9FB] p-3 rounded-md border border-[#E5E7EB]">
+                  <span className="text-[11px] text-[#6B7280] block mb-0.5">
+                    Điểm trung bình tích lũy (CPA)
+                  </span>
+                  <strong className="text-[#15803D] text-sm font-bold">
+                    {student?.cpa.toFixed(2)} / 4.0
+                  </strong>
                 </div>
 
-                <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-                  <span className="text-[11px] text-slate-400 block mb-0.5">Tín chỉ tích lũy</span>
-                  <strong className="text-red-800 text-sm">{student?.accumulatedCredits} / 145 TC</strong>
+                <div className="bg-[#F8F9FB] p-3 rounded-md border border-[#E5E7EB]">
+                  <span className="text-[11px] text-[#6B7280] block mb-0.5">
+                    Tín chỉ tích lũy
+                  </span>
+                  <strong className="text-[#7F1D2D] text-sm font-bold">
+                    {student?.accumulatedCredits} / 150 TC
+                  </strong>
                 </div>
               </>
             )}
@@ -154,10 +197,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="bg-slate-50 px-5 py-3 border-t border-slate-200 flex justify-end">
+        <div className="bg-[#F8F9FB] px-5 py-3 border-t border-[#E5E7EB] flex justify-end">
           <button
+            type="button"
             onClick={onClose}
-            className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-md text-xs transition"
+            className="px-4 py-1.5 bg-[#7F1D2D] hover:bg-[#651525] text-white font-medium rounded-md text-xs transition-colors duration-150 cursor-pointer"
           >
             Đóng
           </button>
