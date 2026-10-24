@@ -2,7 +2,7 @@
 
 ## 1. Tổng Quan Dự Án
 
-**UniCredit Portal** là hệ thống thông tin quản lý học vụ và đăng ký tín chỉ trực tuyến dành cho bậc đại học, được xây dựng theo chuẩn đào tạo tín chỉ của Học viện Công nghệ Bưu chính Viễn thông (PTIT) ngành Công nghệ Thông tin.
+**UniCredit Portal** là hệ thống thông tin quản lý học vụ và đăng ký tín chỉ trực tuyến dành cho bậc đại học, được xây dựng theo chuẩn đào tạo tín chỉ ngành Công nghệ Thông tin.
 
 Hệ thống hỗ trợ hai phân hệ người dùng chính (**Sinh viên** và **Giảng viên / Quản trị đào tạo**), tích hợp bộ kiểm tra ràng buộc học vụ tự động (kiểm tra trùng lịch học, học phần tiên quyết, giới hạn số tín chỉ, sĩ số lớp học phần và học phần đăng ký trùng) cùng cơ sở dữ liệu **MongoDB** lưu trữ tập trung.
 
@@ -71,7 +71,7 @@ flowchart TD
   - Hiển thị lịch học theo dạng lưới tuần (Thứ 2 đến Thứ 7, Tiết 1 đến Tiết 12) hoặc dạng danh sách chi tiết.
   - Hỗ trợ in lịch học khổ A4 và xuất tệp lịch chuẩn `.ICS` để đồng bộ với Google Calendar hoặc Outlook.
 - **Chương trình đào tạo**:
-  - Tích hợp đầy đủ 55 học phần thuộc 9 học kỳ chuẩn Chương trình Đào tạo ngành Công nghệ Thông tin của PTIT.
+  - Tích hợp đầy đủ 55 học phần thuộc 9 học kỳ chuẩn Chương trình Đào tạo ngành Công nghệ Thông tin.
   - Theo dõi trạng thái từng môn học: *Đã đạt*, *Chưa đạt*, *Đang học kỳ này* hoặc *Chưa học*.
 - **Kết quả học tập**:
   - Thống kê điểm trung bình tích lũy toàn khóa (CPA hệ 4), tổng số tín chỉ tích lũy và xếp loại học lực.
@@ -177,7 +177,7 @@ Chạy tệp `run-all.bat` tại thư mục gốc để hệ thống tự độn
    ```powershell
    .\.mongodb\bin\mongod.exe --dbpath .\.mongodb\data --port 27017 --bind_ip 127.0.0.1
    ```
-2. **Khởi tạo dữ liệu chuẩn PTIT vào MongoDB (chạy lần đầu hoặc khi cần làm mới dữ liệu)**:
+2. **Khởi tạo dữ liệu chuẩn vào MongoDB (chạy lần đầu hoặc khi cần làm mới dữ liệu)**:
    ```powershell
    cd frontend
    npm run db:seed

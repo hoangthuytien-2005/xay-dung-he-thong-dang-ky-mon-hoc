@@ -76,7 +76,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
     {
       id: "curriculum",
       label: "Chương trình đào tạo",
-      subLabel: "Khung 9 học kỳ PTIT",
+      subLabel: "Khung 9 học kỳ",
       icon: GitBranch,
       badge: "9 kỳ",
     },
@@ -126,7 +126,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
               Danh mục chức năng
             </h2>
             <p className="text-[11px] text-red-600/80 font-medium">
-              {role === "lecturer" ? "Phân hệ Giảng viên" : "Phân hệ Sinh viên PTIT"}
+              {role === "lecturer" ? "Phân hệ Giảng viên" : "Phân hệ Sinh viên"}
             </p>
           </div>
         )}

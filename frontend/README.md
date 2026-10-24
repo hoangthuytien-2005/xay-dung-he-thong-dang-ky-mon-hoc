@@ -12,7 +12,7 @@
   - `Navbar.tsx`: Thanh điều hướng phía trên và menu thông tin người dùng.
   - `Registration/`: Các thành phần giao diện đăng ký môn học, bộ lọc theo học kỳ CTĐT, xem trước lịch học thu nhỏ và bảng quản lý/hủy học phần đã đăng ký.
   - `Timetable/`: Lưới thời khóa biểu tuần 12 tiết và chức năng xuất lịch `.ICS`.
-  - `Curriculum/`: Khung chương trình đào tạo 9 học kỳ ngành Công nghệ Thông tin (PTIT).
+  - `Curriculum/`: Khung chương trình đào tạo 9 học kỳ ngành Công nghệ Thông tin.
   - `Transcript/`: Bảng kết quả học tập được phân tách chi tiết theo từng học kỳ.
   - `Lecturer/` & `Admin/`: Giao diện quản lý lớp giảng dạy và cấu hình đợt đăng ký.
 - `src/models/`: Định nghĩa Mongoose Schemas ánh xạ tới các Collection trong cơ sở dữ liệu MongoDB (`unicredit_db`).

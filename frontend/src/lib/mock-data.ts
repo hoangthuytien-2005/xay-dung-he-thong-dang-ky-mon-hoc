@@ -134,8 +134,7 @@ export const INITIAL_STUDENT: StudentData = {
   registeredClasses: ["INT1434-01", "INT1339-02"],
 };
 
-// Danh sách môn học chuẩn Chương trình Đào tạo ngành CNTT - PTIT (Học kỳ 1 -> Học kỳ 9)
-// Nguồn: https://daotao.ptit.edu.vn/chuong-trinh-dao-tao/nganh-cong-nghe-thong-tin/
+// Danh sách môn học chuẩn Chương trình Đào tạo ngành CNTT (Học kỳ 1 -> Học kỳ 9)
 export const INITIAL_COURSES: CourseData[] = [
   // ================= HỌC KỲ 1 =================
   {

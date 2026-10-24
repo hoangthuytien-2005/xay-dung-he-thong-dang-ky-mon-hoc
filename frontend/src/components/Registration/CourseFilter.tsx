@@ -52,7 +52,7 @@ export const CourseFilter: React.FC<CourseFilterProps> = ({
     },
     {
       id: "all" as CourseCategoryType,
-      label: "Tất cả môn CTĐT PTIT",
+      label: "Tất cả môn CTĐT",
       icon: Layers,
       badge: `${totalCoursesCount} môn`,
       desc: `Toàn bộ ${totalCoursesCount} môn học 9 kỳ`,
@@ -117,7 +117,7 @@ export const CourseFilter: React.FC<CourseFilterProps> = ({
         </div>
       </div>
 
-      {/* Semester Quick Filter Bar (Học kỳ 1 -> Học kỳ 9 PTIT) */}
+      {/* Semester Quick Filter Bar (Học kỳ 1 -> Học kỳ 9) */}
       {onChangeSemester && (
         <div className="pt-2.5 border-t border-slate-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
           <span className="text-[11px] font-bold text-slate-600 flex items-center space-x-1 shrink-0 mr-1">

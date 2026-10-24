@@ -34,7 +34,7 @@ export async function seedDatabase(): Promise<{ success: boolean; message: strin
     await Student.deleteMany({});
     await Student.create(INITIAL_STUDENT);
 
-    // 3. Seed Courses (52 môn học 9 kỳ PTIT)
+    // 3. Seed Courses (52 môn học 9 kỳ)
     await Course.deleteMany({});
     await Course.insertMany(INITIAL_COURSES);
 

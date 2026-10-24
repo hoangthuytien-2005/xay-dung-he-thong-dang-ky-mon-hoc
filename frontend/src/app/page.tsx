@@ -387,7 +387,7 @@ export default function HomePage() {
                     <div className="xl:col-span-7 space-y-4">
                       <div className="flex items-center justify-between">
                         <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800">
-                          Danh sách học phần mở đăng ký (CTĐT CNTT - PTIT)
+                          Danh sách học phần mở đăng ký
                         </h2>
                         <span className="text-xs text-slate-500">
                           Hiển thị: <strong>{filteredCourses.length}</strong> / {courses.length} môn học
@@ -556,7 +556,7 @@ export default function HomePage() {
       {/* 7. Minimal Academic Footer */}
       <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4">
-          UniCredit Portal © 2024 - 2026 • Cổng Thông Tin Học Vụ & Đăng Ký Tín Chỉ Trực Tuyến (Chương trình Đào tạo CNTT - PTIT)
+          UniCredit Portal © 2024 - 2026 • Cổng Thông Tin Học Vụ & Đăng Ký Tín Chỉ Trực Tuyến (Chương trình Đào tạo CNTT)
         </div>
       </footer>
     </div>
