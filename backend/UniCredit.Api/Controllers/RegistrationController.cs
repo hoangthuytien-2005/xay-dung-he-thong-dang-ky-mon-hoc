@@ -7,6 +7,7 @@ namespace UniCredit.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Route("api/register")]
 public class RegistrationController : ControllerBase
 {
     private readonly IRegistrationService _service;

@@ -50,7 +50,7 @@ const StudentSchema = new Schema<IStudent>(
     completedCourses: [CompletedCourseSchema],
     registeredClasses: [{ type: String }],
   },
-  { timestamps: true }
+  { timestamps: true, collection: "Students" }
 );
 
 export const Student: Model<IStudent> =

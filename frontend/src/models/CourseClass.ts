@@ -36,7 +36,7 @@ const CourseClassSchema = new Schema<ICourseClass>(
     registeredStudents: [{ type: String }],
     tuitionPerCredit: { type: Number, default: 450000 },
   },
-  { timestamps: true }
+  { timestamps: true, collection: "CourseClasses" }
 );
 
 export const CourseClass: Model<ICourseClass> =

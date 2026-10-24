@@ -16,9 +16,9 @@ export const CurriculumView: React.FC<CurriculumViewProps> = ({
   student,
   registeredClasses,
 }) => {
-  const [selectedSemester, setSelectedSemester] = useState<number | "all">(5);
+  const [selectedSemester, setSelectedSemester] = useState<number | "all">("all");
 
-  const semesters = [1, 2, 3, 4, 5, 6, 7, 8];
+  const semesters = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
   const getCourseStatus = (courseCode: string) => {
     if (!student) return { status: "NOT_TAKEN", label: "Chưa học", color: "text-slate-500 bg-slate-100" };
@@ -76,7 +76,7 @@ export const CurriculumView: React.FC<CurriculumViewProps> = ({
             <span>Chương Trình Đào Tạo Ngành: {student?.major || "Công nghệ Thông tin"}</span>
           </h2>
           <p className="text-xs text-slate-500">
-            Khóa: K{student?.academicYear ? student.academicYear % 100 : "21"} • Khung chương trình chuẩn 145 Tín chỉ
+            Khóa: K{student?.academicYear ? student.academicYear % 100 : "21"} • Khung Chương trình đào tạo chuẩn (9 Học kỳ - {courses.length} học phần)
           </p>
         </div>
 

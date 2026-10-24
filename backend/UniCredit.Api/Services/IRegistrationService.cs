@@ -164,11 +164,26 @@ public class RegistrationService : IRegistrationService
         if (!creditCheck.IsValid)
             return ApiResponse<Student>.Fail(creditCheck.Message!, creditCheck.ErrorType);
 
-        // 9. Commit registration
-        student.RegisteredClasses.Add(classCode);
+        // 9. Commit registration in both current reference and memory store
+        if (!student.RegisteredClasses.Contains(classCode))
+            student.RegisteredClasses.Add(classCode);
         targetClass.CurrentSlots += 1;
         if (!targetClass.RegisteredStudents.Contains(studentCode))
             targetClass.RegisteredStudents.Add(studentCode);
+
+        var memStudent = _context.MemoryStudents.FirstOrDefault(x => x.StudentCode == studentCode);
+        if (memStudent != null && !ReferenceEquals(memStudent, student))
+        {
+            if (!memStudent.RegisteredClasses.Contains(classCode))
+                memStudent.RegisteredClasses.Add(classCode);
+        }
+        var memClass = _context.MemoryClasses.FirstOrDefault(x => x.ClassCode == classCode);
+        if (memClass != null && !ReferenceEquals(memClass, targetClass))
+        {
+            memClass.CurrentSlots = targetClass.CurrentSlots;
+            if (!memClass.RegisteredStudents.Contains(studentCode))
+                memClass.RegisteredStudents.Add(studentCode);
+        }
 
         // Update MongoDB if connected
         if (_context.IsConnected && _context.Students != null && _context.CourseClasses != null)
@@ -204,11 +219,23 @@ public class RegistrationService : IRegistrationService
         var allClasses = await GetAllClassesAsync(period.PeriodId);
         var targetClass = allClasses.FirstOrDefault(c => c.ClassCode == classCode);
 
-        student.RegisteredClasses.Remove(classCode);
+        student.RegisteredClasses.RemoveAll(c => string.Equals(c, classCode, StringComparison.OrdinalIgnoreCase));
         if (targetClass != null)
         {
             targetClass.CurrentSlots = Math.Max(0, targetClass.CurrentSlots - 1);
-            targetClass.RegisteredStudents.Remove(studentCode);
+            targetClass.RegisteredStudents.RemoveAll(s => string.Equals(s, studentCode, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var memStudent = _context.MemoryStudents.FirstOrDefault(x => x.StudentCode == studentCode);
+        if (memStudent != null && !ReferenceEquals(memStudent, student))
+        {
+            memStudent.RegisteredClasses.RemoveAll(c => string.Equals(c, classCode, StringComparison.OrdinalIgnoreCase));
+        }
+        var memClass = _context.MemoryClasses.FirstOrDefault(x => x.ClassCode == classCode);
+        if (memClass != null && !ReferenceEquals(memClass, targetClass))
+        {
+            memClass.CurrentSlots = Math.Max(0, memClass.CurrentSlots - 1);
+            memClass.RegisteredStudents.RemoveAll(s => string.Equals(s, studentCode, StringComparison.OrdinalIgnoreCase));
         }
 
         // Update MongoDB if connected
@@ -286,7 +313,7 @@ public class RegistrationService : IRegistrationService
 
     public async Task<ApiResponse> ReSeedAsync()
     {
-        await DbSeeder.SeedAsync(_context);
-        return ApiResponse.Ok("Khôi phục và nạp dữ liệu mẫu thành công!");
+        await DbSeeder.SeedAsync(_context, forceReset: true);
+        return ApiResponse.Ok("Khôi phục và nạp dữ liệu mẫu vào MongoDB thành công!");
     }
 }

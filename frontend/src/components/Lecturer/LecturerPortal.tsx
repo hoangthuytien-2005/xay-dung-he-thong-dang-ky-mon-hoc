@@ -11,6 +11,8 @@ interface LecturerPortalProps {
   classes: CourseClassData[];
   period: RegistrationPeriodData | null;
   onUpdatePeriod: (minCredits: number, maxCredits: number, isActive: boolean) => Promise<void>;
+  externalSubTab?: "classes" | "admin";
+  onChangeExternalSubTab?: (tab: "classes" | "admin") => void;
 }
 
 export const LecturerPortal: React.FC<LecturerPortalProps> = ({
@@ -18,8 +20,15 @@ export const LecturerPortal: React.FC<LecturerPortalProps> = ({
   classes,
   period,
   onUpdatePeriod,
+  externalSubTab,
+  onChangeExternalSubTab,
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<"classes" | "admin">("classes");
+  const [internalSubTab, setInternalSubTab] = useState<"classes" | "admin">("classes");
+  const activeSubTab = externalSubTab ?? internalSubTab;
+  const setActiveSubTab = (tab: "classes" | "admin") => {
+    setInternalSubTab(tab);
+    if (onChangeExternalSubTab) onChangeExternalSubTab(tab);
+  };
 
   // Find classes taught by this lecturer
   const myClasses = classes.filter(

@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace UniCredit.Api.Models;
 
+[BsonIgnoreExtraElements]
 public class CompletedCourse
 {
     [BsonElement("courseCode")]
@@ -27,6 +28,7 @@ public class CompletedCourse
     public string Semester { get; set; } = string.Empty;
 }
 
+[BsonIgnoreExtraElements]
 public class Student
 {
     [BsonId]

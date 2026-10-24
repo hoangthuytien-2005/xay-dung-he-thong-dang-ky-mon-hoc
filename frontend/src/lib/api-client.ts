@@ -22,7 +22,7 @@ export interface LoginResult {
 async function apiFetch<T>(
   endpoint: string,
   options?: RequestInit
-): Promise<{ success: boolean; data?: T; message?: string; errorType?: string }> {
+): Promise<{ success: boolean; data?: T; updatedStudent?: T; message?: string; errorType?: string }> {
   const normalizedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
   const apiPath = normalizedEndpoint.startsWith("/api") ? normalizedEndpoint : `/api${normalizedEndpoint}`;
 
@@ -32,6 +32,7 @@ async function apiFetch<T>(
 
     const res = await fetch(csharpUrl, {
       ...options,
+      cache: "no-store",
       headers: {
         "Content-Type": "application/json",
         ...(options?.headers || {}),
@@ -41,9 +42,9 @@ async function apiFetch<T>(
     if (res.ok) {
       const json = await res.json();
       return json;
-    } else {
+    } else if (res.status !== 404) {
       const errorJson = await res.json().catch(() => null);
-      if (errorJson && typeof errorJson === "object") {
+      if (errorJson && typeof errorJson === "object" && "success" in errorJson) {
         return errorJson;
       }
     }
@@ -55,6 +56,7 @@ async function apiFetch<T>(
   try {
     const res = await fetch(apiPath, {
       ...options,
+      cache: "no-store",
       headers: {
         "Content-Type": "application/json",
         ...(options?.headers || {}),

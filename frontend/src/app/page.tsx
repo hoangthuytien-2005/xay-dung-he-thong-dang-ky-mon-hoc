@@ -22,7 +22,6 @@ import {
   CourseData,
   CourseClassData,
   RegistrationPeriodData,
-  INITIAL_STUDENT,
 } from "@/lib/mock-data";
 import { api } from "@/lib/api-client";
 import { motion, AnimatePresence } from "framer-motion";
@@ -37,6 +36,8 @@ export default function HomePage() {
   } | null>(null);
 
   const [activeTab, setActiveTab] = useState<ActiveTabType>("registration");
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+
   const [student, setStudent] = useState<StudentData | null>(null);
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [classes, setClasses] = useState<CourseClassData[]>([]);
@@ -52,39 +53,48 @@ export default function HomePage() {
 
   // Registration Filter & Hover State
   const [category, setCategory] = useState<CourseCategoryType>("proposal");
+  const [selectedSemester, setSelectedSemester] = useState<number | "all">("all");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [hoveredClass, setHoveredClass] = useState<CourseClassData | null>(null);
   const [errorModal, setErrorModal] = useState<ModalErrorData | null>(null);
 
-  // Fetch initial data
-  const loadData = async () => {
-    setIsLoading(true);
+  // Fetch data (with optional showSpinner so background refreshes don't flash)
+  const loadData = async (showSpinner: boolean = true) => {
+    if (showSpinner) setIsLoading(true);
     try {
       const [resStudent, resCourses, resClasses, resPeriod] = await Promise.all([
-        api.getStudent(),
+        api.getStudent(student?.studentCode || "B21DCCN001"),
         api.getCourses(),
         api.getClasses(),
         api.getPeriod(),
       ]);
 
-      if (resStudent.success && resStudent.data) setStudent(resStudent.data);
+      if (resStudent.success && resStudent.data) {
+        setStudent(resStudent.data);
+        setCurrentUser((prev) =>
+          prev && prev.role === "student" ? { ...prev, student: resStudent.data } : prev
+        );
+      }
       if (resCourses.success && resCourses.data) setCourses(resCourses.data);
       if (resClasses.success && resClasses.data) setClasses(resClasses.data);
       if (resPeriod.success && resPeriod.data) setPeriod(resPeriod.data);
     } catch (err) {
       console.error("Error loading data:", err);
     } finally {
-      setIsLoading(false);
+      if (showSpinner) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    loadData(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Filtered registered classes for current student
   const registeredClasses = classes.filter((c) =>
-    student?.registeredClasses.includes(c.classCode)
+    student?.registeredClasses?.some(
+      (regCode) => regCode.toLowerCase() === c.classCode.toLowerCase()
+    )
   );
 
   const currentTotalCredits = registeredClasses.reduce((sum, c) => sum + c.credits, 0);
@@ -100,7 +110,7 @@ export default function HomePage() {
       .filter((c) => c.isPassed && (c.grade === "D" || c.grade === "D+"))
       .map((c) => c.courseCode) || [];
 
-  // Filter courses by category and search
+  // Filter courses by category, semester, and search
   const filteredCourses = courses.filter((course) => {
     // 1. Search filter
     if (searchTerm.trim()) {
@@ -116,15 +126,18 @@ export default function HomePage() {
       return retakeCodes.includes(course.code);
     } else if (category === "improve") {
       return improveCodes.includes(course.code);
+    } else if (category === "all" && selectedSemester !== "all") {
+      return course.semesterProposal === selectedSemester;
     }
-    return true; // "all"
+    return true; // "all" across all 9 semesters
   });
 
   // Action: Register Class
   const handleRegisterClass = async (classCode: string) => {
     setIsRegistering(classCode);
+    const activeStudentCode = student?.studentCode || "B21DCCN001";
     try {
-      const data = await api.registerClass(student?.studentCode || "B21DCCN001", classCode);
+      const data = await api.registerClass(activeStudentCode, classCode);
 
       if (!data.success) {
         setErrorModal({
@@ -145,8 +158,42 @@ export default function HomePage() {
           // Ignore
         }
 
-        // Refresh data
-        await loadData();
+        // Immediately update local student & class state
+        const returnedStudent = data.data || data.updatedStudent;
+        if (returnedStudent) {
+          setStudent(returnedStudent);
+          setCurrentUser((prev) =>
+            prev && prev.role === "student" ? { ...prev, student: returnedStudent } : prev
+          );
+        } else {
+          setStudent((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  registeredClasses: prev.registeredClasses.includes(classCode)
+                    ? prev.registeredClasses
+                    : [...prev.registeredClasses, classCode],
+                }
+              : prev
+          );
+        }
+
+        setClasses((prev) =>
+          prev.map((cls) =>
+            cls.classCode === classCode
+              ? {
+                  ...cls,
+                  currentSlots: cls.currentSlots + 1,
+                  registeredStudents: cls.registeredStudents.includes(activeStudentCode)
+                    ? cls.registeredStudents
+                    : [...cls.registeredStudents, activeStudentCode],
+                }
+              : cls
+          )
+        );
+
+        // Background sync
+        await loadData(false);
       }
     } catch {
       setErrorModal({
@@ -162,12 +209,64 @@ export default function HomePage() {
   // Action: Drop Class
   const handleDropClass = async (classCode: string) => {
     setIsDropping(classCode);
+    const activeStudentCode = student?.studentCode || "B21DCCN001";
     try {
-      const data = await api.dropClass(student?.studentCode || "B21DCCN001", classCode);
+      const data = await api.dropClass(activeStudentCode, classCode);
       if (!data.success) {
         alert(data.message || "Không thể hủy lớp học phần.");
       } else {
-        await loadData();
+        // Immediately remove classCode from student state so table updates right away
+        const returnedStudent = data.data || data.updatedStudent;
+        if (returnedStudent) {
+          setStudent({
+            ...returnedStudent,
+            registeredClasses: (returnedStudent.registeredClasses || []).filter(
+              (c) => c.toLowerCase() !== classCode.toLowerCase()
+            ),
+          });
+          setCurrentUser((prev) =>
+            prev && prev.role === "student"
+              ? {
+                  ...prev,
+                  student: {
+                    ...returnedStudent,
+                    registeredClasses: (returnedStudent.registeredClasses || []).filter(
+                      (c) => c.toLowerCase() !== classCode.toLowerCase()
+                    ),
+                  },
+                }
+              : prev
+          );
+        } else {
+          setStudent((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  registeredClasses: prev.registeredClasses.filter(
+                    (c) => c.toLowerCase() !== classCode.toLowerCase()
+                  ),
+                }
+              : prev
+          );
+        }
+
+        // Immediately decrement slot count in classes state
+        setClasses((prev) =>
+          prev.map((cls) =>
+            cls.classCode.toLowerCase() === classCode.toLowerCase()
+              ? {
+                  ...cls,
+                  currentSlots: Math.max(0, cls.currentSlots - 1),
+                  registeredStudents: cls.registeredStudents.filter(
+                    (s) => s.toLowerCase() !== activeStudentCode.toLowerCase()
+                  ),
+                }
+              : cls
+          )
+        );
+
+        // Sync with backend in background
+        await loadData(false);
       }
     } catch {
       alert("Lỗi khi kết nối với máy chủ.");
@@ -184,7 +283,7 @@ export default function HomePage() {
   ) => {
     try {
       await api.updatePeriodConfig(minCredits, maxCredits, isActive);
-      await loadData();
+      await loadData(false);
     } catch (err) {
       console.error(err);
     }
@@ -196,8 +295,14 @@ export default function HomePage() {
       <LoginPage
         onLoginSuccess={(user) => {
           setCurrentUser(user);
-          if (user.role === "student" && user.student) {
-            setStudent(user.student);
+          if (user.role === "student") {
+            setActiveTab("registration");
+            if (user.student) {
+              setStudent(user.student);
+            }
+            loadData(false);
+          } else {
+            setActiveTab("lecturer_classes");
           }
         }}
       />
@@ -210,181 +315,221 @@ export default function HomePage() {
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans">
       {/* 1. Academic Red Navbar with Profile Dropdown */}
       <Navbar
-        currentUser={currentUser}
+        currentUser={{
+          ...currentUser,
+          student: student || currentUser.student,
+        }}
         period={period}
         onLogout={() => setCurrentUser(null)}
         onOpenProfile={() => setIsProfileOpen(true)}
         onOpenChangePassword={() => setIsChangePasswordOpen(true)}
       />
 
-      {/* 2. Navigation Tabs (Visible for Students) */}
-      {!isLecturer && (
+      {/* 2. Body Layout: Left Function Column (White BG, Red Text, Dark Red Cell Borders) + Right Main Workspace */}
+      <div className="flex flex-1 min-h-0 w-full max-w-[1600px] mx-auto">
         <NavigationTabs
           activeTab={activeTab}
           onChangeTab={setActiveTab}
           registeredCount={registeredClasses.length}
           totalCredits={currentTotalCredits}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
+          role={currentUser.role}
         />
-      )}
 
-      {/* 3. Main Content Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-500 space-y-2">
-            <div className="w-8 h-8 border-3 border-red-800 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-xs font-medium">Đang tải dữ liệu học vụ...</p>
-          </div>
-        ) : isLecturer && currentUser.lecturer ? (
-          /* LECTURER PORTAL VIEW */
-          <motion.div
-            key="lecturer-portal"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-          >
-            <LecturerPortal
-              lecturer={currentUser.lecturer}
-              classes={classes}
-              period={period}
-              onUpdatePeriod={handleUpdatePeriod}
-            />
-          </motion.div>
-        ) : (
-          /* STUDENT PORTAL VIEWS */
-          <AnimatePresence mode="wait">
-            {/* TAB 1: ĐĂNG KÝ TÍN CHỈ */}
-            {activeTab === "registration" && (
-              <motion.div
-                key="tab-registration"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-              >
-                {/* Period banner & credit progress */}
-                <PeriodBanner
-                  period={period}
-                  currentCredits={currentTotalCredits}
-                />
+        {/* 3. Main Content Container */}
+        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-6">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 text-slate-500 space-y-2">
+              <div className="w-8 h-8 border-3 border-red-800 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-xs font-medium">Đang tải dữ liệu học vụ...</p>
+            </div>
+          ) : isLecturer && currentUser.lecturer ? (
+            /* LECTURER PORTAL VIEW */
+            <motion.div
+              key="lecturer-portal"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+            >
+              <LecturerPortal
+                lecturer={currentUser.lecturer}
+                classes={classes}
+                period={period}
+                onUpdatePeriod={handleUpdatePeriod}
+                externalSubTab={activeTab === "lecturer_admin" ? "admin" : "classes"}
+                onChangeExternalSubTab={(sub) =>
+                  setActiveTab(sub === "admin" ? "lecturer_admin" : "lecturer_classes")
+                }
+              />
+            </motion.div>
+          ) : (
+            /* STUDENT PORTAL VIEWS */
+            <AnimatePresence mode="wait">
+              {/* TAB 1: ĐĂNG KÝ TÍN CHỈ */}
+              {activeTab === "registration" && (
+                <motion.div
+                  key="tab-registration"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                >
+                  {/* Period banner & credit progress */}
+                  <PeriodBanner
+                    period={period}
+                    currentCredits={currentTotalCredits}
+                  />
 
-                {/* 2-Column Responsive Layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  {/* Left Column (Courses to register) */}
-                  <div className="lg:col-span-7 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800">
-                        Danh sách học phần mở đăng ký
-                      </h2>
-                      <span className="text-xs text-slate-500">
-                        Hiển thị: <strong>{filteredCourses.length}</strong> môn học
-                      </span>
-                    </div>
-
-                    {/* Filter categories & Search bar */}
-                    <CourseFilter
-                      activeCategory={category}
-                      onChangeCategory={setCategory}
-                      searchTerm={searchTerm}
-                      onSearchChange={setSearchTerm}
-                      retakeCount={retakeCodes.length}
-                      improveCount={improveCodes.length}
-                      totalCoursesCount={courses.length}
-                    />
-
-                    {/* Courses list */}
-                    {filteredCourses.length === 0 ? (
-                      <div className="bg-white border border-slate-200 rounded-md p-8 text-center text-slate-400">
-                        <p className="text-xs font-medium">Không tìm thấy môn học nào phù hợp với bộ lọc.</p>
+                  {/* 2-Column Responsive Layout */}
+                  <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                    {/* Left Column (Courses to register) */}
+                    <div className="xl:col-span-7 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800">
+                          Danh sách học phần mở đăng ký (CTĐT CNTT - PTIT)
+                        </h2>
+                        <span className="text-xs text-slate-500">
+                          Hiển thị: <strong>{filteredCourses.length}</strong> / {courses.length} môn học
+                        </span>
                       </div>
-                    ) : (
-                      filteredCourses.map((c) => {
-                        const courseClasses = classes.filter(
-                          (cls) => cls.courseCode === c.code
-                        );
 
-                        return (
-                          <CourseCard
-                            key={c.code}
-                            course={c}
-                            classes={courseClasses}
-                            student={student}
-                            registeredClasses={registeredClasses}
-                            onHoverClass={setHoveredClass}
-                            onLeaveClass={() => setHoveredClass(null)}
-                            onRegisterClass={handleRegisterClass}
-                            isRegistering={isRegistering}
-                          />
-                        );
-                      })
-                    )}
-                  </div>
-
-                  {/* Right Column (Mini Schedule Preview & Registered Cart) */}
-                  <div className="lg:col-span-5 space-y-5">
-                    <div className="sticky top-20 space-y-5">
-                      {/* Mini Live Preview */}
-                      <MiniSchedulePreview
-                        registeredClasses={registeredClasses}
-                        hoveredClass={hoveredClass}
+                      {/* Filter categories, semester selector & Search bar */}
+                      <CourseFilter
+                        activeCategory={category}
+                        onChangeCategory={setCategory}
+                        selectedSemester={selectedSemester}
+                        onChangeSemester={setSelectedSemester}
+                        searchTerm={searchTerm}
+                        onSearchChange={setSearchTerm}
+                        retakeCount={retakeCodes.length}
+                        improveCount={improveCodes.length}
+                        totalCoursesCount={courses.length}
                       />
 
-                      {/* Registered Courses Table in Cart */}
-                      <RegisteredTable
-                        registeredClasses={registeredClasses}
-                        onDropClass={handleDropClass}
-                        isDropping={isDropping}
-                      />
+                      {/* Courses list */}
+                      {filteredCourses.length === 0 ? (
+                        <div className="bg-white border border-slate-200 rounded-md p-8 text-center text-slate-400">
+                          <p className="text-xs font-medium">Không tìm thấy môn học nào phù hợp với bộ lọc.</p>
+                        </div>
+                      ) : (
+                        filteredCourses.map((c) => {
+                          const courseClasses = classes.filter(
+                            (cls) => cls.courseCode === c.code
+                          );
+
+                          return (
+                            <CourseCard
+                              key={c.code}
+                              course={c}
+                              classes={courseClasses}
+                              student={student}
+                              registeredClasses={registeredClasses}
+                              onHoverClass={setHoveredClass}
+                              onLeaveClass={() => setHoveredClass(null)}
+                              onRegisterClass={handleRegisterClass}
+                              isRegistering={isRegistering}
+                            />
+                          );
+                        })
+                      )}
+                    </div>
+
+                    {/* Right Column (Mini Schedule Preview & Registered Cart) */}
+                    <div className="xl:col-span-5 space-y-5">
+                      <div className="sticky top-20 space-y-5">
+                        {/* Mini Live Preview */}
+                        <MiniSchedulePreview
+                          registeredClasses={registeredClasses}
+                          hoveredClass={hoveredClass}
+                        />
+
+                        {/* Registered Courses Table in Cart */}
+                        <RegisteredTable
+                          registeredClasses={registeredClasses}
+                          onDropClass={handleDropClass}
+                          isDropping={isDropping}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            )}
+                </motion.div>
+              )}
 
-            {/* TAB 2: THỜI KHÓA BIỂU TOÀN DIỆN */}
-            {activeTab === "timetable" && (
-              <motion.div
-                key="tab-timetable"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-              >
-                <FullTimetableGrid registeredClasses={registeredClasses} />
-              </motion.div>
-            )}
+              {/* TAB 1B: HỦY MÔN HỌC ĐÃ ĐĂNG KÝ */}
+              {activeTab === "drop_courses" && (
+                <motion.div
+                  key="tab-drop-courses"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="space-y-6"
+                >
+                  <PeriodBanner
+                    period={period}
+                    currentCredits={currentTotalCredits}
+                  />
 
-            {/* TAB 3: CHƯƠNG TRÌNH ĐÀO TẠO */}
-            {activeTab === "curriculum" && (
-              <motion.div
-                key="tab-curriculum"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-              >
-                <CurriculumView
-                  courses={courses}
-                  student={student}
-                  registeredClasses={registeredClasses}
-                />
-              </motion.div>
-            )}
+                  <RegisteredTable
+                    registeredClasses={registeredClasses}
+                    onDropClass={handleDropClass}
+                    isDropping={isDropping}
+                  />
 
-            {/* TAB 4: BẢNG ĐIỂM & HỌC TẬP */}
-            {activeTab === "transcript" && (
-              <motion.div
-                key="tab-transcript"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-              >
-                <TranscriptView student={student} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        )}
-      </main>
+                  <MiniSchedulePreview
+                    registeredClasses={registeredClasses}
+                    hoveredClass={null}
+                  />
+                </motion.div>
+              )}
+
+              {/* TAB 2: THỜI KHÓA BIỂU TOÀN DIỆN */}
+              {activeTab === "timetable" && (
+                <motion.div
+                  key="tab-timetable"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                >
+                  <FullTimetableGrid registeredClasses={registeredClasses} />
+                </motion.div>
+              )}
+
+              {/* TAB 3: CHƯƠNG TRÌNH ĐÀO TẠO */}
+              {activeTab === "curriculum" && (
+                <motion.div
+                  key="tab-curriculum"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                >
+                  <CurriculumView
+                    courses={courses}
+                    student={student}
+                    registeredClasses={registeredClasses}
+                  />
+                </motion.div>
+              )}
+
+              {/* TAB 4: BẢNG ĐIỂM & HỌC TẬP */}
+              {activeTab === "transcript" && (
+                <motion.div
+                  key="tab-transcript"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                >
+                  <TranscriptView student={student} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
+        </main>
+      </div>
 
       {/* 4. Conflict / Validation Error Modal */}
       <ConflictModal
@@ -396,7 +541,10 @@ export default function HomePage() {
       <UserProfileModal
         isOpen={isProfileOpen}
         onClose={() => setIsProfileOpen(false)}
-        currentUser={currentUser}
+        currentUser={{
+          ...currentUser,
+          student: student || currentUser.student,
+        }}
       />
 
       {/* 6. Change Password Modal */}
@@ -408,7 +556,7 @@ export default function HomePage() {
       {/* 7. Minimal Academic Footer */}
       <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4">
-          UniCredit Portal © 2024 - 2026 • Cổng Thông Tin Học Vụ & Đăng Ký Tín Chỉ Trực Tuyến
+          UniCredit Portal © 2024 - 2026 • Cổng Thông Tin Học Vụ & Đăng Ký Tín Chỉ Trực Tuyến (Chương trình Đào tạo CNTT - PTIT)
         </div>
       </footer>
     </div>

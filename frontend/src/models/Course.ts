@@ -30,7 +30,7 @@ const CourseSchema = new Schema<ICourse>(
     corequisites: [{ type: String }],
     description: { type: String },
   },
-  { timestamps: true }
+  { timestamps: true, collection: "Courses" }
 );
 
 export const Course: Model<ICourse> =

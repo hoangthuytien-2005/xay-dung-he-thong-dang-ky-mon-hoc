@@ -81,28 +81,33 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     }
   };
 
-  // Quick 1-click login presets
-  const handleQuickLoginStudent = () => {
+  // Quick 1-click login presets (fetch directly from MongoDB API)
+  const handleQuickLoginStudent = async () => {
     setRole("student");
     setUsername("B21DCCN001");
     setPassword("123456");
     setCaptchaInput(captchaCode);
-    onLoginSuccess({
-      role: "student",
-      student: INITIAL_STUDENT,
-    });
+    const res = await api.login("B21DCCN001", "123456", "student");
+    if (res.success && res.data) {
+      onLoginSuccess({
+        role: "student",
+        student: res.data.student,
+      });
+    }
   };
 
-  const handleQuickLoginLecturer = (code: string) => {
+  const handleQuickLoginLecturer = async (code: string) => {
     setRole("lecturer");
-    const l = INITIAL_LECTURERS.find((x) => x.lecturerCode === code) || INITIAL_LECTURERS[0];
-    setUsername(l.lecturerCode);
+    setUsername(code);
     setPassword("123456");
     setCaptchaInput(captchaCode);
-    onLoginSuccess({
-      role: "lecturer",
-      lecturer: l,
-    });
+    const res = await api.login(code, "123456", "lecturer");
+    if (res.success && res.data) {
+      onLoginSuccess({
+        role: "lecturer",
+        lecturer: res.data.lecturer,
+      });
+    }
   };
 
   return (

@@ -28,7 +28,7 @@ const RegistrationPeriodSchema = new Schema<IRegistrationPeriod>(
     targetBatches: [{ type: String }],
     isActive: { type: Boolean, default: true },
   },
-  { timestamps: true }
+  { timestamps: true, collection: "RegistrationPeriods" }
 );
 
 export const RegistrationPeriod: Model<IRegistrationPeriod> =
