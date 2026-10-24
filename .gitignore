@@ -16,8 +16,10 @@ Desktop.ini
 *.stackdump
 *~
 *.swp
+*.swo
 *.bak
 *.tmp
+*.temp
 
 # IDEs (Visual Studio, VS Code, JetBrains Rider / WebStorm)
 .idea/
@@ -33,6 +35,7 @@ Desktop.ini
 *.sln.docstates
 *.rsuser
 *.userprefs
+*.DotSettings.user
 
 # -----------------------------------------------------------------------------
 # 2. Frontend (Node.js / Next.js / TypeScript)
@@ -47,23 +50,29 @@ Desktop.ini
 !**/.yarn/sdks
 !**/.yarn/versions
 
-# Next.js build & output directories
+# Next.js & TypeScript build outputs
 **/.next/
 **/out/
 **/dist/
 **/build/
+**/coverage/
+**/.vercel/
+**/.turbo/
 *.tsbuildinfo
 next-env.d.ts
 
-# Environment variables
+# Environment variables & secret certificates
 .env
+.env.*
 .env*.local
 !.env.example
+*.pem
 
 # Package manager & runtime logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.pnpm-debug.log*
 pnpm-debug.log*
 lerna-debug.log*
 **/*.log
@@ -87,12 +96,17 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
-# .NET local environment settings & build outputs
+# .NET local environment settings, test results & packaging outputs
 **/appsettings.Development.json
 **/appsettings.Production.json
+**/appsettings.Local.json
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
 *.nupkg
+*.snupkg
 **/packages/
 !**/packages/build/
 *.PublishSettings
@@ -100,8 +114,11 @@ bld/
 *.azurePubxml
 
 # -----------------------------------------------------------------------------
-# 4. Local Database & Runtime Scripts
+# 4. Local Database Binaries, Data & Runtime Scripts
 # -----------------------------------------------------------------------------
 .mongodb/
 mongodb-data/
+data/db/
+*.wt
+*.bson
 *.bat
