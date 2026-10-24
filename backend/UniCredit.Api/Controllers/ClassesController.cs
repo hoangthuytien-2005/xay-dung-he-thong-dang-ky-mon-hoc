@@ -30,4 +30,32 @@ public class ClassesController : ControllerBase
 
         return Ok(ApiResponse<List<CourseClass>>.Ok(classes));
     }
+
+    [HttpPatch]
+    public async Task<ActionResult<ApiResponse<CourseClass>>> UpdateClass([FromBody] UpdateClassRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.ClassCode))
+            return BadRequest(ApiResponse<CourseClass>.Fail("Mã lớp học phần không được để trống."));
+
+        if (request.Action.Equals("attendance", StringComparison.OrdinalIgnoreCase) && request.AttendanceRecords != null)
+        {
+            var result = await _service.SaveClassAttendanceAsync(request.ClassCode, request.AttendanceRecords);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        if (request.Action.Equals("schedule", StringComparison.OrdinalIgnoreCase) &&
+            request.DayOfWeek.HasValue && request.StartPeriod.HasValue &&
+            request.PeriodCount.HasValue && !string.IsNullOrWhiteSpace(request.Room))
+        {
+            var result = await _service.UpdateClassScheduleAsync(
+                request.ClassCode,
+                request.DayOfWeek.Value,
+                request.StartPeriod.Value,
+                request.PeriodCount.Value,
+                request.Room);
+            return result.Success ? Ok(result) : BadRequest(result);
+        }
+
+        return BadRequest(ApiResponse<CourseClass>.Fail("Yêu cầu cập nhật lớp học phần không hợp lệ."));
+    }
 }

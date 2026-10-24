@@ -5,7 +5,7 @@ import CourseClass from "../models/CourseClass";
 import RegistrationPeriod from "../models/RegistrationPeriod";
 import Lecturer from "../models/Lecturer";
 import {
-  INITIAL_STUDENT,
+  INITIAL_STUDENTS_COLLECTION,
   INITIAL_COURSES,
   INITIAL_COURSE_CLASSES,
   INITIAL_PERIOD,
@@ -30,9 +30,9 @@ export async function seedDatabase(): Promise<{ success: boolean; message: strin
       endDate: new Date(INITIAL_PERIOD.endDate),
     });
 
-    // 2. Seed Student
+    // 2. Seed Students (Full list of students for Admin & Student portals)
     await Student.deleteMany({});
-    await Student.create(INITIAL_STUDENT);
+    await Student.insertMany(INITIAL_STUDENTS_COLLECTION);
 
     // 3. Seed Courses (52 môn học 9 kỳ)
     await Course.deleteMany({});

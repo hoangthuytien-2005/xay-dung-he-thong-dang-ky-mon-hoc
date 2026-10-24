@@ -1,3 +1,4 @@
+
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
@@ -61,6 +62,9 @@ public class Student
 
     [BsonElement("advisorName")]
     public string AdvisorName { get; set; } = "PGS.TS Nguyễn Mạnh Hùng";
+
+    [BsonElement("academicStatus")]
+    public string AcademicStatus { get; set; } = "ACTIVE"; // ACTIVE, RESERVED, DROPPED_OUT
 
     [BsonElement("completedCourses")]
     public List<CompletedCourse> CompletedCourses { get; set; } = new();

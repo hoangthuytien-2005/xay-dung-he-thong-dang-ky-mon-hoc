@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Navbar, UserRole } from "@/components/Navbar";
 import { LoginPage } from "@/components/Auth/LoginPage";
 import { LecturerPortal } from "@/components/Lecturer/LecturerPortal";
+import { AdminPanel } from "@/components/Admin/AdminPanel";
 import { NavigationTabs, ActiveTabType } from "@/components/NavigationTabs";
 import { PeriodBanner } from "@/components/Registration/PeriodBanner";
 import { CourseFilter, CourseCategoryType } from "@/components/Registration/CourseFilter";
@@ -19,9 +20,12 @@ import { ChangePasswordModal } from "@/components/Modals/ChangePasswordModal";
 import {
   StudentData,
   LecturerData,
+  AdminData,
   CourseData,
   CourseClassData,
   RegistrationPeriodData,
+  AttendanceEntryData,
+  AcademicStatusType,
 } from "@/lib/mock-data";
 import { api } from "@/lib/api-client";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,12 +37,14 @@ export default function HomePage() {
     role: UserRole;
     student?: StudentData;
     lecturer?: LecturerData;
+    admin?: AdminData;
   } | null>(null);
 
   const [activeTab, setActiveTab] = useState<ActiveTabType>("registration");
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
 
   const [student, setStudent] = useState<StudentData | null>(null);
+  const [allStudents, setAllStudents] = useState<StudentData[]>([]);
   const [courses, setCourses] = useState<CourseData[]>([]);
   const [classes, setClasses] = useState<CourseClassData[]>([]);
   const [period, setPeriod] = useState<RegistrationPeriodData | null>(null);
@@ -62,8 +68,9 @@ export default function HomePage() {
   const loadData = async (showSpinner: boolean = true) => {
     if (showSpinner) setIsLoading(true);
     try {
-      const [resStudent, resCourses, resClasses, resPeriod] = await Promise.all([
+      const [resStudent, resAllStudents, resCourses, resClasses, resPeriod] = await Promise.all([
         api.getStudent(student?.studentCode || "B21DCCN001"),
+        api.getAllStudents(),
         api.getCourses(),
         api.getClasses(),
         api.getPeriod(),
@@ -74,6 +81,9 @@ export default function HomePage() {
         setCurrentUser((prev) =>
           prev && prev.role === "student" ? { ...prev, student: resStudent.data } : prev
         );
+      }
+      if (resAllStudents.success && resAllStudents.data) {
+        setAllStudents(resAllStudents.data);
       }
       if (resCourses.success && resCourses.data) setCourses(resCourses.data);
       if (resClasses.success && resClasses.data) setClasses(resClasses.data);
@@ -289,6 +299,85 @@ export default function HomePage() {
     }
   };
 
+  // Action: Save Class Attendance (Lecturer)
+  const handleSaveAttendance = async (
+    classCode: string,
+    attendanceRecords: AttendanceEntryData[]
+  ) => {
+    try {
+      const res = await api.saveClassAttendance(classCode, attendanceRecords);
+      if (res.success) {
+        setClasses((prev) =>
+          prev.map((c) =>
+            c.classCode === classCode
+              ? { ...c, attendanceRecords }
+              : c
+          )
+        );
+        await loadData(false);
+      }
+      return { success: res.success, message: res.message };
+    } catch {
+      return { success: false, message: "Lỗi khi lưu điểm danh." };
+    }
+  };
+
+  // Action: Update Class Teaching Schedule (Lecturer)
+  const handleUpdateClassSchedule = async (
+    classCode: string,
+    dayOfWeek: number,
+    startPeriod: number,
+    periodCount: number,
+    room: string
+  ) => {
+    try {
+      const res = await api.updateClassSchedule(
+        classCode,
+        dayOfWeek,
+        startPeriod,
+        periodCount,
+        room
+      );
+      if (res.success) {
+        setClasses((prev) =>
+          prev.map((c) =>
+            c.classCode === classCode
+              ? { ...c, dayOfWeek, startPeriod, periodCount, room }
+              : c
+          )
+        );
+        await loadData(false);
+      }
+      return { success: res.success, message: res.message };
+    } catch {
+      return { success: false, message: "Lỗi khi cập nhật lịch giảng dạy." };
+    }
+  };
+
+  // Action: Update Student Academic Status (Admin)
+  const handleUpdateStudentStatus = async (
+    studentCode: string,
+    academicStatus: AcademicStatusType
+  ) => {
+    try {
+      const res = await api.updateStudentStatus(studentCode, academicStatus);
+      if (res.success) {
+        setAllStudents((prev) =>
+          prev.map((s) =>
+            s.studentCode === studentCode ? { ...s, academicStatus } : s
+          )
+        );
+        if (student?.studentCode === studentCode) {
+          setStudent((prev) => (prev ? { ...prev, academicStatus } : prev));
+        }
+        await loadData(false);
+      }
+      return { success: res.success, message: res.message };
+    } catch {
+      return { success: false, message: "Lỗi khi cập nhật trạng thái học vụ sinh viên." };
+    }
+  };
+
   // If user is not logged in, show LoginPage
   if (!currentUser) {
     return (
@@ -301,8 +390,12 @@ export default function HomePage() {
               setStudent(user.student);
             }
             loadData(false);
+          } else if (user.role === "lecturer") {
+            setActiveTab("lecturer_attendance");
+            loadData(false);
           } else {
-            setActiveTab("lecturer_classes");
+            setActiveTab("admin_period");
+            loadData(false);
           }
         }}
       />
@@ -310,6 +403,7 @@ export default function HomePage() {
   }
 
   const isLecturer = currentUser.role === "lecturer";
+  const isAdmin = currentUser.role === "admin";
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans">
@@ -355,11 +449,43 @@ export default function HomePage() {
               <LecturerPortal
                 lecturer={currentUser.lecturer}
                 classes={classes}
-                period={period}
-                onUpdatePeriod={handleUpdatePeriod}
-                externalSubTab={activeTab === "lecturer_admin" ? "admin" : "classes"}
+                students={allStudents}
+                onSaveAttendance={handleSaveAttendance}
+                onUpdateClassSchedule={handleUpdateClassSchedule}
+                externalSubTab={
+                  activeTab === "lecturer_schedule" ? "schedule" : "attendance"
+                }
                 onChangeExternalSubTab={(sub) =>
-                  setActiveTab(sub === "admin" ? "lecturer_admin" : "lecturer_classes")
+                  setActiveTab(
+                    sub === "schedule"
+                      ? "lecturer_schedule"
+                      : "lecturer_attendance"
+                  )
+                }
+              />
+            </motion.div>
+          ) : isAdmin ? (
+            /* TRAINING ADMINISTRATION PORTAL VIEW */
+            <motion.div
+              key="admin-portal"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+            >
+              <AdminPanel
+                admin={currentUser.admin}
+                period={period}
+                classes={classes}
+                students={allStudents}
+                onUpdatePeriod={handleUpdatePeriod}
+                onUpdateStudentStatus={handleUpdateStudentStatus}
+                externalSubTab={
+                  activeTab === "admin_students" ? "students" : "period"
+                }
+                onChangeExternalSubTab={(sub) =>
+                  setActiveTab(
+                    sub === "students" ? "admin_students" : "admin_period"
+                  )
                 }
               />
             </motion.div>

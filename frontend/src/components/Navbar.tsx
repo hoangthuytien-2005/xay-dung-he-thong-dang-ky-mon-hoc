@@ -1,16 +1,17 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { StudentData, LecturerData, RegistrationPeriodData } from "@/lib/mock-data";
-import { GraduationCap, LogOut, User, KeyRound, ChevronDown, UserCheck } from "lucide-react";
+import { StudentData, LecturerData, AdminData, RegistrationPeriodData } from "@/lib/mock-data";
+import { GraduationCap, LogOut, User, KeyRound, ChevronDown, UserCheck, ShieldCheck } from "lucide-react";
 
-export type UserRole = "student" | "lecturer";
+export type UserRole = "student" | "lecturer" | "admin";
 
 interface NavbarProps {
   currentUser: {
     role: UserRole;
     student?: StudentData | null;
     lecturer?: LecturerData | null;
+    admin?: AdminData | null;
   };
   period: RegistrationPeriodData | null;
   onLogout: () => void;
@@ -29,8 +30,29 @@ export const Navbar: React.FC<NavbarProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const isStudent = currentUser.role === "student";
+  const isLecturer = currentUser.role === "lecturer";
+  const isAdmin = currentUser.role === "admin";
   const student = currentUser.student;
   const lecturer = currentUser.lecturer;
+  const admin = currentUser.admin;
+
+  const displayName = isStudent
+    ? student?.fullName
+    : isLecturer
+    ? lecturer?.fullName
+    : admin?.fullName;
+
+  const displayCode = isStudent
+    ? student?.studentCode
+    : isLecturer
+    ? lecturer?.lecturerCode
+    : admin?.adminCode;
+
+  const portalLabel = isStudent
+    ? "CỔNG SINH VIÊN"
+    : isLecturer
+    ? "CỔNG GIẢNG VIÊN"
+    : "QUẢN TRỊ ĐÀO TẠO";
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -58,7 +80,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   UniCredit Portal
                 </span>
                 <span className="text-[11px] font-bold uppercase tracking-wider bg-red-950 text-red-200 px-2 py-0.5 rounded border border-red-700">
-                  {isStudent ? "CỔNG SINH VIÊN" : "CỔNG GIẢNG VIÊN"}
+                  {portalLabel}
                 </span>
               </div>
               <p className="text-xs text-red-100">
@@ -95,6 +117,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="w-7 h-7 rounded bg-red-950 flex items-center justify-center text-red-200 font-bold text-xs border border-red-700 shrink-0">
                 {isStudent ? (
                   student?.studentCode.slice(-3)
+                ) : isAdmin ? (
+                  <ShieldCheck className="w-4 h-4 text-emerald-300" />
                 ) : (
                   <UserCheck className="w-4 h-4 text-yellow-300" />
                 )}
@@ -104,15 +128,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="text-xs">
                 <div className="font-semibold text-white flex items-center space-x-1.5">
                   <span className="truncate max-w-[140px]">
-                    {isStudent ? student?.fullName : lecturer?.fullName}
+                    {displayName}
                   </span>
                   <span className="text-[10px] bg-white text-red-800 font-bold px-1 rounded">
-                    {isStudent ? student?.studentCode : lecturer?.lecturerCode}
+                    {displayCode}
                   </span>
                 </div>
                 <div className="text-[11px] text-red-200">
                   {isStudent ? (
                     <>Lớp: {student?.administrativeClass} • CPA: <span className="text-yellow-300 font-bold">{student?.cpa.toFixed(2)}</span></>
+                  ) : isAdmin ? (
+                    admin?.title
                   ) : (
                     lecturer?.title
                   )}
@@ -129,10 +155,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {/* Header in dropdown */}
                 <div className="px-3.5 py-2 border-b border-slate-100 bg-slate-50">
                   <p className="font-bold text-slate-900 truncate">
-                    {isStudent ? student?.fullName : lecturer?.fullName}
+                    {displayName}
                   </p>
                   <p className="text-[11px] text-slate-500 font-mono">
-                    {isStudent ? student?.studentCode : lecturer?.lecturerCode}
+                    {displayCode}
                   </p>
                 </div>
 

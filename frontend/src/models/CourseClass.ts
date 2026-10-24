@@ -1,5 +1,12 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
 
+export interface IAttendanceEntry {
+  studentCode: string;
+  status: "PRESENT" | "ABSENT" | "EXCUSED" | "LATE";
+  note?: string;
+  updatedAt?: string;
+}
+
 export interface ICourseClass extends Document {
   classCode: string;          // e.g. INT1306-01
   courseCode: string;         // e.g. INT1306
@@ -14,10 +21,25 @@ export interface ICourseClass extends Document {
   maxSlots: number;           // e.g. 60
   currentSlots: number;       // e.g. 42
   registeredStudents: string[]; // List of studentCodes
+  attendanceRecords?: IAttendanceEntry[];
   tuitionPerCredit: number;   // e.g. 450000
   createdAt: Date;
   updatedAt: Date;
 }
+
+const AttendanceEntrySchema = new Schema<IAttendanceEntry>(
+  {
+    studentCode: { type: String, required: true },
+    status: {
+      type: String,
+      enum: ["PRESENT", "ABSENT", "EXCUSED", "LATE"],
+      default: "PRESENT",
+    },
+    note: { type: String, default: "" },
+    updatedAt: { type: String },
+  },
+  { _id: false }
+);
 
 const CourseClassSchema = new Schema<ICourseClass>(
   {
@@ -34,6 +56,7 @@ const CourseClassSchema = new Schema<ICourseClass>(
     maxSlots: { type: Number, required: true, default: 60 },
     currentSlots: { type: Number, required: true, default: 0 },
     registeredStudents: [{ type: String }],
+    attendanceRecords: [AttendanceEntrySchema],
     tuitionPerCredit: { type: Number, default: 450000 },
   },
   { timestamps: true, collection: "CourseClasses" }

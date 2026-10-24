@@ -4,6 +4,9 @@ import {
   CourseClassData,
   RegistrationPeriodData,
   LecturerData,
+  AdminData,
+  AcademicStatusType,
+  AttendanceEntryData,
 } from "./mock-data";
 
 // Base C# Backend URL (default: http://localhost:5000)
@@ -12,9 +15,10 @@ const CSHARP_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:50
   .replace(/\/api$/, "");
 
 export interface LoginResult {
-  role: "student" | "lecturer";
+  role: "student" | "lecturer" | "admin";
   student?: StudentData;
   lecturer?: LecturerData;
+  admin?: AdminData;
   token?: string;
 }
 
@@ -42,7 +46,7 @@ async function apiFetch<T>(
     if (res.ok) {
       const json = await res.json();
       return json;
-    } else if (res.status !== 404) {
+    } else if (res.status !== 404 && res.status !== 405) {
       const errorJson = await res.json().catch(() => null);
       if (errorJson && typeof errorJson === "object" && "success" in errorJson) {
         return errorJson;
@@ -73,23 +77,61 @@ async function apiFetch<T>(
 
 export const api = {
   // Authentication
-  login: (username: string, password: string, role: "student" | "lecturer") =>
+  login: (username: string, password: string, role: "student" | "lecturer" | "admin") =>
     apiFetch<LoginResult>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify({ username, password, role }),
     }),
 
-  // Student Profile
+  // Student Profile & Admin Student List
   getStudent: (code: string = "B21DCCN001") =>
     apiFetch<StudentData>(`/api/student?code=${encodeURIComponent(code)}`),
+
+  getAllStudents: () =>
+    apiFetch<StudentData[]>("/api/student?all=true"),
+
+  updateStudentStatus: (studentCode: string, academicStatus: AcademicStatusType) =>
+    apiFetch<StudentData>("/api/student", {
+      method: "PATCH",
+      body: JSON.stringify({ studentCode, academicStatus }),
+    }),
 
   // Courses
   getCourses: () =>
     apiFetch<CourseData[]>("/api/courses"),
 
-  // Classes
+  // Classes & Lecturer Operations (Attendance + Teaching Schedule)
   getClasses: (periodId: string = "2024-2025-HK1") =>
     apiFetch<CourseClassData[]>(`/api/classes?periodId=${encodeURIComponent(periodId)}`),
+
+  saveClassAttendance: (classCode: string, attendanceRecords: AttendanceEntryData[]) =>
+    apiFetch<CourseClassData>("/api/classes", {
+      method: "PATCH",
+      body: JSON.stringify({
+        action: "attendance",
+        classCode,
+        attendanceRecords,
+      }),
+    }),
+
+  updateClassSchedule: (
+    classCode: string,
+    dayOfWeek: number,
+    startPeriod: number,
+    periodCount: number,
+    room: string
+  ) =>
+    apiFetch<CourseClassData>("/api/classes", {
+      method: "PATCH",
+      body: JSON.stringify({
+        action: "schedule",
+        classCode,
+        dayOfWeek,
+        startPeriod,
+        periodCount,
+        room,
+      }),
+    }),
 
   // Registration Period
   getPeriod: () =>

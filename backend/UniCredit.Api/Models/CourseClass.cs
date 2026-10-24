@@ -4,6 +4,22 @@ using MongoDB.Bson.Serialization.Attributes;
 namespace UniCredit.Api.Models;
 
 [BsonIgnoreExtraElements]
+public class AttendanceEntry
+{
+    [BsonElement("studentCode")]
+    public string StudentCode { get; set; } = string.Empty;
+
+    [BsonElement("status")]
+    public string Status { get; set; } = "PRESENT"; // PRESENT, ABSENT, EXCUSED, LATE
+
+    [BsonElement("note")]
+    public string? Note { get; set; }
+
+    [BsonElement("updatedAt")]
+    public string? UpdatedAt { get; set; }
+}
+
+[BsonIgnoreExtraElements]
 public class CourseClass
 {
     [BsonId]
@@ -48,6 +64,9 @@ public class CourseClass
 
     [BsonElement("registeredStudents")]
     public List<string> RegisteredStudents { get; set; } = new();
+
+    [BsonElement("attendanceRecords")]
+    public List<AttendanceEntry> AttendanceRecords { get; set; } = new();
 
     [BsonElement("tuitionPerCredit")]
     public decimal TuitionPerCredit { get; set; } = 450000;

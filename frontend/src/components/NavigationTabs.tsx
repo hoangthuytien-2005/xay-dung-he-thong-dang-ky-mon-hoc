@@ -11,6 +11,8 @@ import {
   ChevronRight,
   Settings,
   Users,
+  ClipboardCheck,
+  UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserRole } from "./Navbar";
@@ -21,8 +23,10 @@ export type ActiveTabType =
   | "timetable"
   | "curriculum"
   | "transcript"
-  | "lecturer_classes"
-  | "lecturer_admin";
+  | "lecturer_attendance"
+  | "lecturer_schedule"
+  | "admin_period"
+  | "admin_students";
 
 interface NavigationTabsProps {
   activeTab: ActiveTabType;
@@ -90,20 +94,47 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
 
   const lecturerTabs: SidebarTabItem[] = [
     {
-      id: "lecturer_classes",
-      label: "Lớp học phần phụ trách",
-      subLabel: "Danh sách SV & Điểm danh",
-      icon: Users,
+      id: "lecturer_attendance",
+      label: "Điểm danh sinh viên",
+      subLabel: "Cá nhân & Toàn bộ lớp",
+      icon: ClipboardCheck,
     },
     {
-      id: "lecturer_admin",
-      label: "Quản trị đào tạo",
-      subLabel: "Cấu hình đợt & Sĩ số",
-      icon: Settings,
+      id: "lecturer_schedule",
+      label: "Quản lý lịch dạy",
+      subLabel: "Lịch giảng dạy từng lớp",
+      icon: Calendar,
     },
   ];
 
-  const tabs = role === "lecturer" ? lecturerTabs : studentTabs;
+  const adminTabs: SidebarTabItem[] = [
+    {
+      id: "admin_period",
+      label: "Mở / Đóng cổng ĐKTC",
+      subLabel: "Cấu hình đợt & Sĩ số",
+      icon: Settings,
+    },
+    {
+      id: "admin_students",
+      label: "Quản lý hồ sơ sinh viên",
+      subLabel: "Đánh dấu Bảo lưu / Thôi học",
+      icon: UserCog,
+    },
+  ];
+
+  const tabs =
+    role === "lecturer"
+      ? lecturerTabs
+      : role === "admin"
+      ? adminTabs
+      : studentTabs;
+
+  const roleSubtitle =
+    role === "lecturer"
+      ? "Phân hệ Giảng viên"
+      : role === "admin"
+      ? "Quản trị Đào tạo"
+      : "Phân hệ Sinh viên";
 
   return (
     <aside
@@ -126,7 +157,7 @@ export const NavigationTabs: React.FC<NavigationTabsProps> = ({
               Danh mục chức năng
             </h2>
             <p className="text-[11px] text-red-600/80 font-medium">
-              {role === "lecturer" ? "Phân hệ Giảng viên" : "Phân hệ Sinh viên"}
+              {roleSubtitle}
             </p>
           </div>
         )}

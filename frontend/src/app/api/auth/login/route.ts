@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getStudentProfile } from "@/lib/data-repository";
 import connectToDatabase from "@/lib/mongodb";
 import Lecturer from "@/models/Lecturer";
-import { INITIAL_LECTURERS } from "@/lib/mock-data";
+import { INITIAL_LECTURERS, INITIAL_ADMIN } from "@/lib/mock-data";
 
 export async function POST(request: Request) {
   try {
@@ -11,8 +11,25 @@ export async function POST(request: Request) {
 
     await connectToDatabase();
 
-    if (String(role).toLowerCase() === "lecturer") {
-      let count = await Lecturer.countDocuments();
+    const normalizedRole = String(role).toLowerCase();
+
+    if (normalizedRole === "admin") {
+      return NextResponse.json({
+        success: true,
+        message: "Đăng nhập Quản trị đào tạo thành công (MongoDB).",
+        data: {
+          role: "admin",
+          admin: {
+            ...INITIAL_ADMIN,
+            adminCode: String(username).toUpperCase() || INITIAL_ADMIN.adminCode,
+          },
+          token: `token_admin_${username}`,
+        },
+      });
+    }
+
+    if (normalizedRole === "lecturer") {
+      const count = await Lecturer.countDocuments();
       if (count === 0) {
         await Lecturer.insertMany(INITIAL_LECTURERS);
       }

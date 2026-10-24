@@ -63,7 +63,103 @@ public static class DbSeeder
             new() { CourseCode = "INT1340", CourseName = "Cơ sở dữ liệu", Credits = 3, Grade = "D+", GradePoint = 1.5, IsPassed = true, Semester = "2023-2024-HK1" },
             new() { CourseCode = "INT1416", CourseName = "Nhập môn trí tuệ nhân tạo", Credits = 3, Grade = "F", GradePoint = 0.0, IsPassed = false, Semester = "2023-2024-HK2" }
         },
-        RegisteredClasses = new List<string> { "INT1434-01", "INT1339-02" }
+        RegisteredClasses = new List<string> { "INT1434-01", "INT1339-02" },
+        AcademicStatus = "ACTIVE"
+    };
+
+    public static List<Student> GetDefaultStudents() => new()
+    {
+        GetDefaultStudent(),
+        new()
+        {
+            StudentCode = "B21DCCN012",
+            FullName = "Trần Thị Ngọc Ánh",
+            Email = "anhttn.b21cn012@unicredit.edu.vn",
+            Major = "Công nghệ Thông tin",
+            AdministrativeClass = "D21CQCN01-B",
+            AcademicYear = 2021,
+            Cpa = 3.62,
+            AccumulatedCredits = 78,
+            AdvisorName = "PGS.TS Nguyễn Mạnh Hùng",
+            CompletedCourses = GetDefaultStudent().CompletedCourses,
+            RegisteredClasses = new List<string> { "INT1434-01", "INT1405-01" },
+            AcademicStatus = "ACTIVE"
+        },
+        new()
+        {
+            StudentCode = "B21DCCN045",
+            FullName = "Lê Đức Mạnh",
+            Email = "manhld.b21cn045@unicredit.edu.vn",
+            Major = "Công nghệ Thông tin",
+            AdministrativeClass = "D21CQCN02-B",
+            AcademicYear = 2021,
+            Cpa = 2.95,
+            AccumulatedCredits = 68,
+            AdvisorName = "TS. Hoàng Xuân Dậu",
+            CompletedCourses = GetDefaultStudent().CompletedCourses.Take(16).ToList(),
+            RegisteredClasses = new List<string> { "INT1434-01", "INT1339-01" },
+            AcademicStatus = "ACTIVE"
+        },
+        new()
+        {
+            StudentCode = "B21DCCN089",
+            FullName = "Phạm Quốc Bảo",
+            Email = "baopq.b21cn089@unicredit.edu.vn",
+            Major = "An toàn Thông tin",
+            AdministrativeClass = "D21CQAT01-B",
+            AcademicYear = 2021,
+            Cpa = 3.18,
+            AccumulatedCredits = 70,
+            AdvisorName = "TS. Hoàng Đăng Hải",
+            CompletedCourses = GetDefaultStudent().CompletedCourses.Take(18).ToList(),
+            RegisteredClasses = new List<string> { "INT1405-01", "INT1461-01" },
+            AcademicStatus = "ACTIVE"
+        },
+        new()
+        {
+            StudentCode = "B21DCCN120",
+            FullName = "Vũ Thu Hà",
+            Email = "havt.b21cn120@unicredit.edu.vn",
+            Major = "Công nghệ Thông tin",
+            AdministrativeClass = "D21CQCN03-B",
+            AcademicYear = 2021,
+            Cpa = 2.64,
+            AccumulatedCredits = 58,
+            AdvisorName = "TS. Ngô Xuân Bách",
+            CompletedCourses = GetDefaultStudent().CompletedCourses.Take(14).ToList(),
+            RegisteredClasses = new List<string>(),
+            AcademicStatus = "RESERVED"
+        },
+        new()
+        {
+            StudentCode = "B21DCCN144",
+            FullName = "Đặng Minh Khôi",
+            Email = "khoidm.b21cn144@unicredit.edu.vn",
+            Major = "Khoa học Máy tính",
+            AdministrativeClass = "D21CQKH01-B",
+            AcademicYear = 2021,
+            Cpa = 3.45,
+            AccumulatedCredits = 75,
+            AdvisorName = "PGS.TS Vũ Hữu Tiến",
+            CompletedCourses = GetDefaultStudent().CompletedCourses,
+            RegisteredClasses = new List<string> { "INT1434-01", "INT1479-01" },
+            AcademicStatus = "ACTIVE"
+        },
+        new()
+        {
+            StudentCode = "B21DCCN203",
+            FullName = "Ngô Gia Huy",
+            Email = "huyng.b21cn203@unicredit.edu.vn",
+            Major = "Công nghệ Thông tin",
+            AdministrativeClass = "D21CQCN04-B",
+            AcademicYear = 2021,
+            Cpa = 1.42,
+            AccumulatedCredits = 32,
+            AdvisorName = "TS. Lê Quang Minh",
+            CompletedCourses = GetDefaultStudent().CompletedCourses.Take(8).ToList(),
+            RegisteredClasses = new List<string>(),
+            AcademicStatus = "DROPPED_OUT"
+        }
     };
 
     public static List<Course> GetDefaultCourses() => new()
@@ -269,7 +365,7 @@ public static class DbSeeder
         // 1. Populate In-Memory fallback store with fresh copies
         context.MemoryPeriod = DefaultPeriod;
         context.MemoryStudents.Clear();
-        context.MemoryStudents.Add(GetDefaultStudent());
+        context.MemoryStudents.AddRange(GetDefaultStudents());
 
         context.MemoryCourses.Clear();
         context.MemoryCourses.AddRange(GetDefaultCourses());
@@ -304,11 +400,12 @@ public static class DbSeeder
                     await context.RegistrationPeriods.InsertOneAsync(DefaultPeriod);
                 }
 
+                var defaultStudents = GetDefaultStudents();
                 var existingStudents = await context.Students.CountDocumentsAsync(FilterDefinition<Student>.Empty);
-                if (forceReset || existingStudents == 0)
+                if (forceReset || existingStudents < defaultStudents.Count)
                 {
                     await context.Students.DeleteManyAsync(FilterDefinition<Student>.Empty);
-                    await context.Students.InsertOneAsync(GetDefaultStudent());
+                    await context.Students.InsertManyAsync(defaultStudents);
                 }
 
                 var existingLecturers = await context.Lecturers!.CountDocumentsAsync(FilterDefinition<Lecturer>.Empty);

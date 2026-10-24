@@ -8,8 +8,12 @@ namespace UniCredit.Api.Services;
 public interface IRegistrationService
 {
     Task<Student?> GetStudentProfileAsync(string studentCode);
+    Task<List<Student>> GetAllStudentsAsync();
+    Task<ApiResponse<Student>> UpdateStudentStatusAsync(string studentCode, string academicStatus);
     Task<List<Course>> GetAllCoursesAsync();
     Task<List<CourseClass>> GetAllClassesAsync(string periodId);
+    Task<ApiResponse<CourseClass>> SaveClassAttendanceAsync(string classCode, List<AttendanceEntry> attendanceRecords);
+    Task<ApiResponse<CourseClass>> UpdateClassScheduleAsync(string classCode, int dayOfWeek, int startPeriod, int periodCount, string room);
     Task<RegistrationPeriod> GetActivePeriodAsync();
     Task<ApiResponse<Student>> RegisterClassAsync(string studentCode, string classCode);
     Task<ApiResponse<Student>> DropClassAsync(string studentCode, string classCode);
@@ -54,6 +58,63 @@ public class RegistrationService : IRegistrationService
                ?? _context.MemoryStudents.FirstOrDefault();
     }
 
+    public async Task<List<Student>> GetAllStudentsAsync()
+    {
+        if (_context.IsConnected && _context.Students != null)
+        {
+            try
+            {
+                var list = await _context.Students.Find(FilterDefinition<Student>.Empty).ToListAsync();
+                if (list.Count > 0) return list;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("MongoDB read all students error, falling back to memory: {Msg}", ex.Message);
+            }
+        }
+
+        return _context.MemoryStudents;
+    }
+
+    public async Task<ApiResponse<Student>> UpdateStudentStatusAsync(string studentCode, string academicStatus)
+    {
+        var normalized = (academicStatus ?? "ACTIVE").ToUpperInvariant();
+        if (normalized != "ACTIVE" && normalized != "RESERVED" && normalized != "DROPPED_OUT")
+            return ApiResponse<Student>.Fail("Trạng thái học vụ không hợp lệ.");
+
+        var student = await GetStudentProfileAsync(studentCode);
+        if (student == null)
+            return ApiResponse<Student>.Fail($"Không tìm thấy sinh viên [{studentCode}].");
+
+        student.AcademicStatus = normalized;
+        var memStudent = _context.MemoryStudents.FirstOrDefault(s => s.StudentCode == studentCode);
+        if (memStudent != null)
+            memStudent.AcademicStatus = normalized;
+
+        if (_context.IsConnected && _context.Students != null)
+        {
+            try
+            {
+                await _context.Students.UpdateOneAsync(
+                    s => s.StudentCode == studentCode,
+                    Builders<Student>.Update.Set(s => s.AcademicStatus, normalized));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("MongoDB update student status error: {Msg}", ex.Message);
+            }
+        }
+
+        string statusLabel = normalized switch
+        {
+            "RESERVED" => "Bảo lưu kết quả học tập",
+            "DROPPED_OUT" => "Đã thôi học",
+            _ => "Đang theo học"
+        };
+
+        return ApiResponse<Student>.Ok(student, $"Đã cập nhật trạng thái học vụ của sinh viên [{studentCode}] thành \"{statusLabel}\".");
+    }
+
     public async Task<List<Course>> GetAllCoursesAsync()
     {
         if (_context.IsConnected && _context.Courses != null)
@@ -90,6 +151,79 @@ public class RegistrationService : IRegistrationService
         return _context.MemoryClasses.Where(x => x.PeriodId == periodId).ToList();
     }
 
+    public async Task<ApiResponse<CourseClass>> SaveClassAttendanceAsync(string classCode, List<AttendanceEntry> attendanceRecords)
+    {
+        var period = await GetActivePeriodAsync();
+        var allClasses = await GetAllClassesAsync(period.PeriodId);
+        var targetClass = allClasses.FirstOrDefault(c => c.ClassCode == classCode);
+        if (targetClass == null)
+            return ApiResponse<CourseClass>.Fail($"Không tìm thấy lớp học phần [{classCode}].");
+
+        targetClass.AttendanceRecords = attendanceRecords ?? new List<AttendanceEntry>();
+        var memClass = _context.MemoryClasses.FirstOrDefault(c => c.ClassCode == classCode);
+        if (memClass != null)
+            memClass.AttendanceRecords = targetClass.AttendanceRecords;
+
+        if (_context.IsConnected && _context.CourseClasses != null)
+        {
+            try
+            {
+                await _context.CourseClasses.UpdateOneAsync(
+                    c => c.ClassCode == classCode,
+                    Builders<CourseClass>.Update.Set(c => c.AttendanceRecords, targetClass.AttendanceRecords));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("MongoDB update attendance error: {Msg}", ex.Message);
+            }
+        }
+
+        return ApiResponse<CourseClass>.Ok(targetClass, $"Đã lưu điểm danh cho lớp học phần [{classCode}] thành công!");
+    }
+
+    public async Task<ApiResponse<CourseClass>> UpdateClassScheduleAsync(string classCode, int dayOfWeek, int startPeriod, int periodCount, string room)
+    {
+        var period = await GetActivePeriodAsync();
+        var allClasses = await GetAllClassesAsync(period.PeriodId);
+        var targetClass = allClasses.FirstOrDefault(c => c.ClassCode == classCode);
+        if (targetClass == null)
+            return ApiResponse<CourseClass>.Fail($"Không tìm thấy lớp học phần [{classCode}].");
+
+        targetClass.DayOfWeek = dayOfWeek;
+        targetClass.StartPeriod = startPeriod;
+        targetClass.PeriodCount = periodCount;
+        targetClass.Room = string.IsNullOrWhiteSpace(room) ? targetClass.Room : room.Trim();
+
+        var memClass = _context.MemoryClasses.FirstOrDefault(c => c.ClassCode == classCode);
+        if (memClass != null)
+        {
+            memClass.DayOfWeek = targetClass.DayOfWeek;
+            memClass.StartPeriod = targetClass.StartPeriod;
+            memClass.PeriodCount = targetClass.PeriodCount;
+            memClass.Room = targetClass.Room;
+        }
+
+        if (_context.IsConnected && _context.CourseClasses != null)
+        {
+            try
+            {
+                await _context.CourseClasses.UpdateOneAsync(
+                    c => c.ClassCode == classCode,
+                    Builders<CourseClass>.Update
+                        .Set(c => c.DayOfWeek, targetClass.DayOfWeek)
+                        .Set(c => c.StartPeriod, targetClass.StartPeriod)
+                        .Set(c => c.PeriodCount, targetClass.PeriodCount)
+                        .Set(c => c.Room, targetClass.Room));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("MongoDB update schedule error: {Msg}", ex.Message);
+            }
+        }
+
+        return ApiResponse<CourseClass>.Ok(targetClass, $"Đã cập nhật lịch giảng dạy lớp [{classCode}] thành công!");
+    }
+
     public async Task<RegistrationPeriod> GetActivePeriodAsync()
     {
         if (_context.IsConnected && _context.RegistrationPeriods != null)
@@ -121,6 +255,11 @@ public class RegistrationService : IRegistrationService
         var student = await GetStudentProfileAsync(studentCode);
         if (student == null)
             return ApiResponse<Student>.Fail($"Không tìm thấy sinh viên [{studentCode}].", "STUDENT_NOT_FOUND");
+
+        if (student.AcademicStatus == "DROPPED_OUT")
+            return ApiResponse<Student>.Fail("Tài khoản sinh viên đang ở trạng thái ĐÃ THÔI HỌC, không thể đăng ký tín chỉ.", "STUDENT_INACTIVE");
+        if (student.AcademicStatus == "RESERVED")
+            return ApiResponse<Student>.Fail("Tài khoản sinh viên đang ở trạng thái BẢO LƯU, không thể đăng ký tín chỉ.", "STUDENT_INACTIVE");
 
         var allClasses = await GetAllClassesAsync(period.PeriodId);
         var targetClass = allClasses.FirstOrDefault(c => c.ClassCode == classCode);

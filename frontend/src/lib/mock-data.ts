@@ -8,6 +8,17 @@ export interface CompletedCourseData {
   semester: string;
 }
 
+export type AcademicStatusType = "ACTIVE" | "RESERVED" | "DROPPED_OUT";
+
+export type AttendanceStatusType = "PRESENT" | "ABSENT" | "EXCUSED" | "LATE";
+
+export interface AttendanceEntryData {
+  studentCode: string;
+  status: AttendanceStatusType;
+  note?: string;
+  updatedAt?: string;
+}
+
 export interface StudentData {
   studentCode: string;
   fullName: string;
@@ -18,6 +29,7 @@ export interface StudentData {
   cpa: number;
   accumulatedCredits: number;
   advisorName: string;
+  academicStatus?: AcademicStatusType;
   completedCourses: CompletedCourseData[];
   registeredClasses: string[];
 }
@@ -50,6 +62,7 @@ export interface CourseClassData {
   maxSlots: number;
   currentSlots: number;
   registeredStudents: string[];
+  attendanceRecords?: AttendanceEntryData[];
   tuitionPerCredit: number;
 }
 
@@ -61,6 +74,15 @@ export interface LecturerData {
   email: string;
   phone: string;
   teachingClassCodes: string[];
+}
+
+export interface AdminData {
+  adminCode: string;
+  fullName: string;
+  title: string;
+  department: string;
+  email: string;
+  phone: string;
 }
 
 export interface RegistrationPeriodData {
@@ -99,6 +121,7 @@ export const INITIAL_STUDENT: StudentData = {
   cpa: 3.38,
   accumulatedCredits: 74,
   advisorName: "PGS.TS Nguyễn Mạnh Hùng",
+  academicStatus: "ACTIVE",
   completedCourses: [
     // Học kỳ 1
     { courseCode: "BAS1150", courseName: "Triết học Mác-Lênin", credits: 3, grade: "B", gradePoint: 3.0, isPassed: true, semester: "2021-2022-HK1" },
@@ -1422,20 +1445,118 @@ export const INITIAL_LECTURERS: LecturerData[] = [
   },
 ];
 
+export const INITIAL_ADMIN: AdminData = {
+  adminCode: "ADMIN01",
+  fullName: "ThS. Nguyễn Văn Quản Trị",
+  title: "Chuyên viên Quản lý Đào tạo",
+  department: "Phòng Giáo vụ & Đào tạo Đại học PTIT",
+  email: "giaovu@unicredit.edu.vn",
+  phone: "024.3756.2186",
+};
+
 export interface StudentRosterItem {
   studentCode: string;
   fullName: string;
   administrativeClass: string;
   email: string;
   registeredDate: string;
+  academicStatus?: AcademicStatusType;
 }
 
 export const SAMPLE_STUDENTS_LIST: StudentRosterItem[] = [
-  { studentCode: "B21DCCN001", fullName: "Nguyễn Hoàng Minh", administrativeClass: "D21CQCN01-B", email: "minhnh.b21cn001@unicredit.edu.vn", registeredDate: "2024-09-02 08:15" },
-  { studentCode: "B21DCCN012", fullName: "Trần Bảo Trâm", administrativeClass: "D21CQCN01-B", email: "tramtb.b21cn012@unicredit.edu.vn", registeredDate: "2024-09-02 08:20" },
-  { studentCode: "B21DCCN045", fullName: "Lê Đức Anh", administrativeClass: "D21CQCN02-B", email: "anhld.b21cn045@unicredit.edu.vn", registeredDate: "2024-09-02 08:24" },
-  { studentCode: "B21DCCN089", fullName: "Vũ Minh Quân", administrativeClass: "D21CQCN03-B", email: "quanvm.b21cn089@unicredit.edu.vn", registeredDate: "2024-09-02 08:31" },
-  { studentCode: "B21DCCN120", fullName: "Phạm Thu Hương", administrativeClass: "D21CQCN01-B", email: "huongpt.b21cn120@unicredit.edu.vn", registeredDate: "2024-09-02 09:05" },
-  { studentCode: "B21DCCN144", fullName: "Đặng Quang Huy", administrativeClass: "D21CQCN02-B", email: "huydq.b21cn144@unicredit.edu.vn", registeredDate: "2024-09-02 09:18" },
-  { studentCode: "B21DCCN203", fullName: "Ngô Quốc Khánh", administrativeClass: "D21CQCN04-B", email: "khanhnq.b21cn203@unicredit.edu.vn", registeredDate: "2024-09-02 10:02" },
+  { studentCode: "B21DCCN001", fullName: "Nguyễn Hoàng Minh", administrativeClass: "D21CQCN01-B", email: "minhnh.b21cn001@unicredit.edu.vn", registeredDate: "2024-09-02 08:15", academicStatus: "ACTIVE" },
+  { studentCode: "B21DCCN012", fullName: "Trần Bảo Trâm", administrativeClass: "D21CQCN01-B", email: "tramtb.b21cn012@unicredit.edu.vn", registeredDate: "2024-09-02 08:20", academicStatus: "ACTIVE" },
+  { studentCode: "B21DCCN045", fullName: "Lê Đức Anh", administrativeClass: "D21CQCN02-B", email: "anhld.b21cn045@unicredit.edu.vn", registeredDate: "2024-09-02 08:24", academicStatus: "ACTIVE" },
+  { studentCode: "B21DCCN089", fullName: "Vũ Minh Quân", administrativeClass: "D21CQCN03-B", email: "quanvm.b21cn089@unicredit.edu.vn", registeredDate: "2024-09-02 08:31", academicStatus: "RESERVED" },
+  { studentCode: "B21DCCN120", fullName: "Phạm Thu Hương", administrativeClass: "D21CQCN01-B", email: "huongpt.b21cn120@unicredit.edu.vn", registeredDate: "2024-09-02 09:05", academicStatus: "ACTIVE" },
+  { studentCode: "B21DCCN144", fullName: "Đặng Quang Huy", administrativeClass: "D21CQCN02-B", email: "huydq.b21cn144@unicredit.edu.vn", registeredDate: "2024-09-02 09:18", academicStatus: "ACTIVE" },
+  { studentCode: "B21DCCN203", fullName: "Ngô Quốc Khánh", administrativeClass: "D21CQCN04-B", email: "khanhnq.b21cn203@unicredit.edu.vn", registeredDate: "2024-09-02 10:02", academicStatus: "DROPPED_OUT" },
+];
+
+export const INITIAL_STUDENTS_COLLECTION: StudentData[] = [
+  INITIAL_STUDENT,
+  {
+    studentCode: "B21DCCN012",
+    fullName: "Trần Bảo Trâm",
+    email: "tramtb.b21cn012@unicredit.edu.vn",
+    major: "Công nghệ Thông tin",
+    administrativeClass: "D21CQCN01-B",
+    academicYear: 2021,
+    cpa: 3.62,
+    accumulatedCredits: 78,
+    advisorName: "PGS.TS Nguyễn Mạnh Hùng",
+    academicStatus: "ACTIVE",
+    completedCourses: INITIAL_STUDENT.completedCourses,
+    registeredClasses: ["INT1434-01", "INT1405-01"],
+  },
+  {
+    studentCode: "B21DCCN045",
+    fullName: "Lê Đức Anh",
+    email: "anhld.b21cn045@unicredit.edu.vn",
+    major: "Công nghệ Thông tin",
+    administrativeClass: "D21CQCN02-B",
+    academicYear: 2021,
+    cpa: 3.15,
+    accumulatedCredits: 72,
+    advisorName: "TS. Hoàng Xuân Dậu",
+    academicStatus: "ACTIVE",
+    completedCourses: INITIAL_STUDENT.completedCourses,
+    registeredClasses: ["INT1434-01", "INT1339-01"],
+  },
+  {
+    studentCode: "B21DCCN089",
+    fullName: "Vũ Minh Quân",
+    email: "quanvm.b21cn089@unicredit.edu.vn",
+    major: "Công nghệ Thông tin",
+    administrativeClass: "D21CQCN03-B",
+    academicYear: 2021,
+    cpa: 2.65,
+    accumulatedCredits: 64,
+    advisorName: "TS. Ngô Xuân Bách",
+    academicStatus: "RESERVED",
+    completedCourses: INITIAL_STUDENT.completedCourses,
+    registeredClasses: [],
+  },
+  {
+    studentCode: "B21DCCN120",
+    fullName: "Phạm Thu Hương",
+    email: "huongpt.b21cn120@unicredit.edu.vn",
+    major: "Công nghệ Thông tin",
+    administrativeClass: "D21CQCN01-B",
+    academicYear: 2021,
+    cpa: 3.45,
+    accumulatedCredits: 75,
+    advisorName: "PGS.TS Nguyễn Mạnh Hùng",
+    academicStatus: "ACTIVE",
+    completedCourses: INITIAL_STUDENT.completedCourses,
+    registeredClasses: ["INT1434-01", "INT1405-01"],
+  },
+  {
+    studentCode: "B21DCCN144",
+    fullName: "Đặng Quang Huy",
+    email: "huydq.b21cn144@unicredit.edu.vn",
+    major: "Công nghệ Thông tin",
+    administrativeClass: "D21CQCN02-B",
+    academicYear: 2021,
+    cpa: 2.92,
+    accumulatedCredits: 70,
+    advisorName: "TS. Hoàng Xuân Dậu",
+    academicStatus: "ACTIVE",
+    completedCourses: INITIAL_STUDENT.completedCourses,
+    registeredClasses: ["INT1339-01", "INT1405-01"],
+  },
+  {
+    studentCode: "B21DCCN203",
+    fullName: "Ngô Quốc Khánh",
+    email: "khanhnq.b21cn203@unicredit.edu.vn",
+    major: "Công nghệ Thông tin",
+    administrativeClass: "D21CQCN04-B",
+    academicYear: 2021,
+    cpa: 1.75,
+    accumulatedCredits: 42,
+    advisorName: "PGS.TS Vũ Hữu Tiến",
+    academicStatus: "DROPPED_OUT",
+    completedCourses: INITIAL_STUDENT.completedCourses.slice(0, 6),
+    registeredClasses: [],
+  },
 ];

@@ -38,6 +38,26 @@ export async function POST(request: Request) {
 
     // 2. Lấy dữ liệu sinh viên, môn học, các lớp học phần
     const student = await getStudentProfile(studentCode);
+    if (student.academicStatus === "DROPPED_OUT") {
+      return NextResponse.json(
+        {
+          success: false,
+          errorType: "STUDENT_INACTIVE",
+          message: "Tài khoản sinh viên đã có quyết định THÔI HỌC, không thể đăng ký học phần.",
+        },
+        { status: 400 }
+      );
+    }
+    if (student.academicStatus === "RESERVED") {
+      return NextResponse.json(
+        {
+          success: false,
+          errorType: "STUDENT_INACTIVE",
+          message: "Tài khoản sinh viên đang trong thời gian BẢO LƯU kết quả học tập, không thể đăng ký học phần.",
+        },
+        { status: 400 }
+      );
+    }
     const courses = await getAllCourses();
     const allClasses = await getAllCourseClasses(period.periodId);
 

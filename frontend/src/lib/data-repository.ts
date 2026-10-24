@@ -5,6 +5,7 @@ import CourseClass from "../models/CourseClass";
 import RegistrationPeriod from "../models/RegistrationPeriod";
 import {
   INITIAL_STUDENT,
+  INITIAL_STUDENTS_COLLECTION,
   INITIAL_COURSES,
   INITIAL_COURSE_CLASSES,
   INITIAL_PERIOD,
@@ -12,6 +13,8 @@ import {
   CourseData,
   CourseClassData,
   RegistrationPeriodData,
+  AcademicStatusType,
+  AttendanceEntryData,
 } from "./mock-data";
 
 // Ensure MongoDB is connected and automatically seeded on first run if collections are empty
@@ -29,7 +32,6 @@ async function ensureMongoSeeded(): Promise<void> {
 
   const courseCount = await Course.countDocuments();
   if (courseCount < INITIAL_COURSES.length) {
-    // Seed initial courses & classes if missing or outdated
     await Course.deleteMany({});
     await Course.insertMany(INITIAL_COURSES);
 
@@ -50,17 +52,15 @@ async function ensureMongoSeeded(): Promise<void> {
   }
 
   const studentCount = await Student.countDocuments();
-  if (studentCount === 0) {
-    await Student.create(INITIAL_STUDENT);
-  } else {
-    // Ensure student has the full 4-semester completedCourses history if outdated
-    const existingStudent = await Student.findOne({ studentCode: "B21DCCN001" });
-    if (
-      existingStudent &&
-      existingStudent.completedCourses.length < INITIAL_STUDENT.completedCourses.length
-    ) {
-      existingStudent.completedCourses = INITIAL_STUDENT.completedCourses;
-      await existingStudent.save();
+  if (studentCount < INITIAL_STUDENTS_COLLECTION.length) {
+    for (const sData of INITIAL_STUDENTS_COLLECTION) {
+      const exists = await Student.findOne({ studentCode: sData.studentCode });
+      if (!exists) {
+        await Student.create(sData);
+      } else if (!exists.academicStatus) {
+        exists.academicStatus = sData.academicStatus || "ACTIVE";
+        await exists.save();
+      }
     }
   }
 
@@ -111,8 +111,71 @@ export async function getStudentProfile(studentCode: string = "B21DCCN001"): Pro
     cpa: s.cpa,
     accumulatedCredits: s.accumulatedCredits,
     advisorName: s.advisorName,
+    academicStatus: (s.academicStatus as AcademicStatusType) || "ACTIVE",
     completedCourses: s.completedCourses,
     registeredClasses: s.registeredClasses,
+  };
+}
+
+export async function getAllStudents(): Promise<StudentData[]> {
+  await ensureMongoSeeded();
+  const list = await Student.find({}).sort({ studentCode: 1 }).lean();
+  return list.map((s) => ({
+    studentCode: s.studentCode,
+    fullName: s.fullName,
+    email: s.email,
+    major: s.major,
+    administrativeClass: s.administrativeClass,
+    academicYear: s.academicYear,
+    cpa: s.cpa,
+    accumulatedCredits: s.accumulatedCredits,
+    advisorName: s.advisorName,
+    academicStatus: (s.academicStatus as AcademicStatusType) || "ACTIVE",
+    completedCourses: s.completedCourses,
+    registeredClasses: s.registeredClasses,
+  }));
+}
+
+export async function updateStudentAcademicStatus(
+  studentCode: string,
+  academicStatus: AcademicStatusType
+): Promise<{ success: boolean; message: string; data?: StudentData }> {
+  await ensureMongoSeeded();
+  const student = await Student.findOne({ studentCode });
+  if (!student) {
+    return {
+      success: false,
+      message: `Không tìm thấy sinh viên [${studentCode}] trong MongoDB.`,
+    };
+  }
+
+  student.academicStatus = academicStatus;
+  await student.save();
+
+  const statusLabel =
+    academicStatus === "ACTIVE"
+      ? "Đang học"
+      : academicStatus === "RESERVED"
+      ? "Bảo lưu"
+      : "Đã thôi học";
+
+  return {
+    success: true,
+    message: `Đã cập nhật trạng thái học vụ của sinh viên ${student.fullName} (${studentCode}) thành "${statusLabel}".`,
+    data: {
+      studentCode: student.studentCode,
+      fullName: student.fullName,
+      email: student.email,
+      major: student.major,
+      administrativeClass: student.administrativeClass,
+      academicYear: student.academicYear,
+      cpa: student.cpa,
+      accumulatedCredits: student.accumulatedCredits,
+      advisorName: student.advisorName,
+      academicStatus: student.academicStatus,
+      completedCourses: student.completedCourses,
+      registeredClasses: student.registeredClasses,
+    },
   };
 }
 
@@ -151,8 +214,93 @@ export async function getAllCourseClasses(periodId: string = "2024-2025-HK1"): P
     maxSlots: c.maxSlots,
     currentSlots: c.currentSlots,
     registeredStudents: c.registeredStudents,
+    attendanceRecords: (c.attendanceRecords as AttendanceEntryData[]) || [],
     tuitionPerCredit: c.tuitionPerCredit,
   }));
+}
+
+export async function saveClassAttendance(
+  classCode: string,
+  attendanceRecords: AttendanceEntryData[]
+): Promise<{ success: boolean; message: string; data?: CourseClassData }> {
+  await ensureMongoSeeded();
+  const courseClass = await CourseClass.findOne({ classCode });
+  if (!courseClass) {
+    return {
+      success: false,
+      message: `Không tìm thấy lớp học phần [${classCode}] trong MongoDB.`,
+    };
+  }
+
+  courseClass.attendanceRecords = attendanceRecords;
+  await courseClass.save();
+
+  return {
+    success: true,
+    message: `Đã lưu kết quả điểm danh lớp [${classCode}] vào MongoDB thành công!`,
+    data: {
+      classCode: courseClass.classCode,
+      courseCode: courseClass.courseCode,
+      courseName: courseClass.courseName,
+      credits: courseClass.credits,
+      periodId: courseClass.periodId,
+      dayOfWeek: courseClass.dayOfWeek,
+      startPeriod: courseClass.startPeriod,
+      periodCount: courseClass.periodCount,
+      room: courseClass.room,
+      lecturer: courseClass.lecturer,
+      maxSlots: courseClass.maxSlots,
+      currentSlots: courseClass.currentSlots,
+      registeredStudents: courseClass.registeredStudents,
+      attendanceRecords: (courseClass.attendanceRecords as AttendanceEntryData[]) || [],
+      tuitionPerCredit: courseClass.tuitionPerCredit,
+    },
+  };
+}
+
+export async function updateClassSchedule(
+  classCode: string,
+  dayOfWeek: number,
+  startPeriod: number,
+  periodCount: number,
+  room: string
+): Promise<{ success: boolean; message: string; data?: CourseClassData }> {
+  await ensureMongoSeeded();
+  const courseClass = await CourseClass.findOne({ classCode });
+  if (!courseClass) {
+    return {
+      success: false,
+      message: `Không tìm thấy lớp học phần [${classCode}] trong MongoDB.`,
+    };
+  }
+
+  courseClass.dayOfWeek = dayOfWeek;
+  courseClass.startPeriod = startPeriod;
+  courseClass.periodCount = periodCount;
+  courseClass.room = room;
+  await courseClass.save();
+
+  return {
+    success: true,
+    message: `Đã cập nhật lịch dạy lớp [${classCode}] vào MongoDB thành công!`,
+    data: {
+      classCode: courseClass.classCode,
+      courseCode: courseClass.courseCode,
+      courseName: courseClass.courseName,
+      credits: courseClass.credits,
+      periodId: courseClass.periodId,
+      dayOfWeek: courseClass.dayOfWeek,
+      startPeriod: courseClass.startPeriod,
+      periodCount: courseClass.periodCount,
+      room: courseClass.room,
+      lecturer: courseClass.lecturer,
+      maxSlots: courseClass.maxSlots,
+      currentSlots: courseClass.currentSlots,
+      registeredStudents: courseClass.registeredStudents,
+      attendanceRecords: (courseClass.attendanceRecords as AttendanceEntryData[]) || [],
+      tuitionPerCredit: courseClass.tuitionPerCredit,
+    },
+  };
 }
 
 export async function registerClassForStudent(
@@ -166,6 +314,14 @@ export async function registerClassForStudent(
 
   if (!student || !courseClass) {
     return { success: false, message: "Không tìm thấy thông tin sinh viên hoặc lớp học phần trong MongoDB." };
+  }
+
+  if (student.academicStatus === "RESERVED" || student.academicStatus === "DROPPED_OUT") {
+    const label = student.academicStatus === "RESERVED" ? "Bảo lưu" : "Đã thôi học";
+    return {
+      success: false,
+      message: `Sinh viên hiện đang ở trạng thái "${label}" nên không thể đăng ký tín chỉ.`,
+    };
   }
 
   if (student.registeredClasses.includes(classCode)) {
@@ -196,6 +352,7 @@ export async function registerClassForStudent(
     cpa: student.cpa,
     accumulatedCredits: student.accumulatedCredits,
     advisorName: student.advisorName,
+    academicStatus: student.academicStatus || "ACTIVE",
     completedCourses: student.completedCourses,
     registeredClasses: [...student.registeredClasses],
   };
@@ -244,6 +401,7 @@ export async function dropClassForStudent(
     cpa: student.cpa,
     accumulatedCredits: student.accumulatedCredits,
     advisorName: student.advisorName,
+    academicStatus: student.academicStatus || "ACTIVE",
     completedCourses: student.completedCourses,
     registeredClasses: [...student.registeredClasses],
   };

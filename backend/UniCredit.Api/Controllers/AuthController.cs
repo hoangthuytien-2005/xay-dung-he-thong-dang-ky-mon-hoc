@@ -21,12 +21,24 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.Username))
             return BadRequest(ApiResponse<LoginResponse>.Fail("Tên đăng nhập không được để trống."));
 
+        if (request.Role.Equals("admin", StringComparison.OrdinalIgnoreCase))
+        {
+            return Ok(ApiResponse<LoginResponse>.Ok(new LoginResponse
+            {
+                Role = "admin",
+                Admin = new AdminProfileDto
+                {
+                    AdminCode = request.Username.ToUpper()
+                },
+                Token = $"token_admin_{request.Username}_{Guid.NewGuid():N}"
+            }, "Đăng nhập Quản trị đào tạo thành công."));
+        }
+
         if (request.Role.Equals("lecturer", StringComparison.OrdinalIgnoreCase))
         {
             var lecturer = await _service.GetLecturerAsync(request.Username);
             if (lecturer == null)
             {
-                // Fallback default lecturer
                 var list = await _service.GetAllLecturersAsync();
                 lecturer = list.FirstOrDefault();
             }

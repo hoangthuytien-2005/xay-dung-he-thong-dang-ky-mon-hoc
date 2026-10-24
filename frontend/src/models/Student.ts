@@ -10,6 +10,8 @@ export interface ICompletedCourse {
   semester: string;
 }
 
+export type AcademicStatusType = "ACTIVE" | "RESERVED" | "DROPPED_OUT";
+
 export interface IStudent extends Document {
   studentCode: string;
   fullName: string;
@@ -20,6 +22,7 @@ export interface IStudent extends Document {
   cpa: number;
   accumulatedCredits: number;
   advisorName: string;
+  academicStatus: AcademicStatusType;
   completedCourses: ICompletedCourse[];
   registeredClasses: string[]; // List of classCodes registered in current period
   createdAt: Date;
@@ -47,6 +50,11 @@ const StudentSchema = new Schema<IStudent>(
     cpa: { type: Number, required: true, default: 0.0 },
     accumulatedCredits: { type: Number, required: true, default: 0 },
     advisorName: { type: String, default: "PGS.TS Nguyễn Mạnh Hùng" },
+    academicStatus: {
+      type: String,
+      enum: ["ACTIVE", "RESERVED", "DROPPED_OUT"],
+      default: "ACTIVE",
+    },
     completedCourses: [CompletedCourseSchema],
     registeredClasses: [{ type: String }],
   },
