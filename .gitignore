@@ -121,4 +121,4 @@ mongodb-data/
 data/db/
 *.wt
 *.bson
-*.bat
+
